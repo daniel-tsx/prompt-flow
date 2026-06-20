@@ -9,7 +9,7 @@ import type { CollectionListItem } from "@/db/queries/collections";
 export function CollectionCard({ collection }: { collection: CollectionListItem }) {
   return (
     <Link href={`/collections/${collection.id}`}>
-      <Card className="group gap-0 p-4 transition-colors hover:border-primary/40">
+      <Card className="group gap-0 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
         <div className="flex items-center gap-2.5">
           <span
             className="flex size-9 items-center justify-center rounded-lg"

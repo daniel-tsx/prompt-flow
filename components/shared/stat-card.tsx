@@ -21,25 +21,27 @@ export function StatCard({
   const body = (
     <Card
       className={cn(
-        "gap-0 p-4 transition-colors",
-        href && "hover:border-primary/40 hover:bg-card/80",
+        "gap-0 p-4 transition-all duration-200",
+        href && "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </span>
         <span
           className={cn(
-            "flex size-7 items-center justify-center rounded-md border",
+            "flex size-7 items-center justify-center rounded-lg border",
             accentBadge[accent],
           )}
         >
           <Icon className="size-3.5" />
         </span>
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold tabular-nums">{value}</span>
+      <div className="mt-2.5 flex items-baseline gap-2">
+        <span className="text-[1.7rem] font-semibold leading-none tracking-tight tabular-nums">
+          {value}
+        </span>
         {hint && <span className={cn("text-xs", accentText[accent])}>{hint}</span>}
       </div>
     </Card>

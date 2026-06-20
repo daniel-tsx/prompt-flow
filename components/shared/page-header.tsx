@@ -32,14 +32,14 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           {Icon && (
-            <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary ring-1 ring-primary/20">
-              <Icon className="size-5" />
+            <span className="mt-0.5 flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-inset ring-primary/25">
+              <Icon className="size-[1.15rem]" />
             </span>
           )}
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold tracking-tight text-balance">{title}</h1>
             {description && (
-              <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+              <p className="mt-1 text-sm leading-snug text-muted-foreground">{description}</p>
             )}
           </div>
         </div>

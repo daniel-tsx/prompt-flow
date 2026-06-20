@@ -8,7 +8,7 @@ import type { ProjectListItem } from "@/db/queries/projects";
 export function ProjectCard({ project }: { project: ProjectListItem }) {
   return (
     <Link href={`/projects/${project.slug}`}>
-      <Card className="group gap-0 overflow-hidden p-0 transition-colors hover:border-primary/40">
+      <Card className="group gap-0 overflow-hidden p-0 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
         <div className="h-1.5" style={{ backgroundColor: project.color }} />
         <div className="p-4">
           <div className="flex items-center gap-2">

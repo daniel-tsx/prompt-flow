@@ -103,15 +103,15 @@
   --secondary: oklch(0.27 0.02 280);
   --secondary-foreground: oklch(0.94 0.008 280);
   --muted: oklch(0.25 0.018 280);
-  --muted-foreground: oklch(0.68 0.02 280);
+  --muted-foreground: oklch(0.705 0.022 280);
   --accent: oklch(0.3 0.04 290);
   --accent-foreground: oklch(0.95 0.01 290);
   --destructive: oklch(0.66 0.2 22);
   --success: oklch(0.72 0.15 162);
   --warning: oklch(0.78 0.15 72);
   --info: oklch(0.68 0.14 240);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 12%);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.66 0.19 292);
   --chart-1: oklch(0.66 0.19 292);
   --chart-2: oklch(0.74 0.13 188);
@@ -124,7 +124,7 @@
   --sidebar-primary-foreground: oklch(0.16 0.02 280);
   --sidebar-accent: oklch(0.27 0.025 290);
   --sidebar-accent-foreground: oklch(0.95 0.01 290);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: oklch(0.66 0.19 292);
 }
 
@@ -136,10 +136,33 @@
     @apply bg-background text-foreground;
     font-feature-settings: "cv11", "ss01";
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
     scrollbar-gutter: stable;
+  }
+  ::selection {
+    background: oklch(0.66 0.19 292 / 0.32);
+  }
+  /* Crisp, lifted cards: hairline top highlight + soft drop on the dark cockpit. */
+  .dark [data-slot="card"] {
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.04) inset,
+      0 1px 2px -1px oklch(0 0 0 / 0.4),
+      0 2px 6px -2px oklch(0 0 0 / 0.28);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
