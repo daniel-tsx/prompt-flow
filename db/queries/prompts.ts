@@ -7,6 +7,7 @@ import {
   promptVersions,
   prompts,
   workflowSteps,
+  workflows,
   type Prompt,
 } from "@/db/schema";
 import {
@@ -206,8 +207,12 @@ export async function getPromptBySlug(slug: string) {
       stepId: workflowSteps.id,
       stepTitle: workflowSteps.title,
       workflowId: workflowSteps.workflowId,
+      workflowTitle: workflows.title,
+      workflowSlug: workflows.slug,
+      workflowType: workflows.workflowType,
     })
     .from(workflowSteps)
+    .innerJoin(workflows, eq(workflowSteps.workflowId, workflows.id))
     .where(eq(workflowSteps.linkedPromptId, prompt.id));
 
   const relatedNotes = await db
@@ -235,6 +240,10 @@ export type PromptDetail = NonNullable<Awaited<ReturnType<typeof getPromptBySlug
 
 export async function getPromptById(id: string) {
   return db.query.prompts.findFirst({ where: eq(prompts.id, id) });
+}
+
+export async function getPromptForEdit(slug: string) {
+  return db.query.prompts.findFirst({ where: eq(prompts.slug, slug) });
 }
 
 export async function listPromptsForPicker() {
