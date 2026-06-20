@@ -15,7 +15,13 @@ import {
   workflows,
 } from "@/db/schema";
 import { runAction } from "@/lib/action-result";
-import { buildBackup, type FullBackup } from "@/lib/export";
+import {
+  buildBackup,
+  notesToCsv,
+  promptsToMarkdown,
+  workflowsToMarkdown,
+  type FullBackup,
+} from "@/lib/export";
 
 /** Export the entire library as a JSON backup string. */
 export async function exportAllData() {
@@ -56,6 +62,35 @@ export async function exportAllData() {
       collections: allCollections,
       collectionItems: allItems,
     });
+  });
+}
+
+export async function exportPromptsMarkdown() {
+  return runAction(async () => {
+    const rows = await db.select().from(prompts);
+    return promptsToMarkdown(rows);
+  });
+}
+
+export async function exportWorkflowsMarkdown() {
+  return runAction(async () => {
+    const [wfRows, stepRows] = await Promise.all([
+      db.select().from(workflows),
+      db.select().from(workflowSteps),
+    ]);
+    return workflowsToMarkdown(
+      wfRows.map((workflow) => ({
+        workflow,
+        steps: stepRows.filter((s) => s.workflowId === workflow.id),
+      })),
+    );
+  });
+}
+
+export async function exportNotesCsv() {
+  return runAction(async () => {
+    const rows = await db.select().from(notes);
+    return notesToCsv(rows);
   });
 }
 
