@@ -175,6 +175,9 @@ export const collectionItemTypeEnum = pgEnum("collection_item_type", [
   "note",
 ]);
 
+/** Which of the two accounts a row belongs to. Owner = private; demo = seeded showcase. */
+export const accountEnum = pgEnum("account", ["owner", "demo"]);
+
 /* -------------------------------------------------------------------------- */
 /*  Shared column helpers                                                      */
 /* -------------------------------------------------------------------------- */
@@ -208,6 +211,7 @@ export const projects = pgTable(
   "projects",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
@@ -229,6 +233,7 @@ export const prompts = pgTable(
   "prompts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     title: text("title").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
@@ -266,6 +271,7 @@ export const promptVersions = pgTable(
   "prompt_versions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     promptId: uuid("prompt_id")
       .notNull()
       .references(() => prompts.id, { onDelete: "cascade" }),
@@ -285,6 +291,7 @@ export const promptRuns = pgTable(
   "prompt_runs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     promptId: uuid("prompt_id")
       .notNull()
       .references(() => prompts.id, { onDelete: "cascade" }),
@@ -327,6 +334,7 @@ export const workflows = pgTable(
   "workflows",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     title: text("title").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
@@ -356,6 +364,7 @@ export const workflowSteps = pgTable(
   "workflow_steps",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     workflowId: uuid("workflow_id")
       .notNull()
       .references(() => workflows.id, { onDelete: "cascade" }),
@@ -382,6 +391,7 @@ export const notes = pgTable(
   "notes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     title: text("title").notNull(),
     body: text("body"),
     noteType: noteTypeEnum("note_type").notNull().default("quick-note"),
@@ -422,6 +432,7 @@ export type TemplateVariable = {
 
 export const templates = pgTable("templates", {
   id: uuid("id").primaryKey().defaultRandom(),
+  account: accountEnum("account").notNull().default("owner"),
   name: text("name").notNull(),
   templateType: templateTypeEnum("template_type").notNull().default("prompt"),
   description: text("description"),
@@ -441,6 +452,7 @@ export const templates = pgTable("templates", {
 
 export const collections = pgTable("collections", {
   id: uuid("id").primaryKey().defaultRandom(),
+  account: accountEnum("account").notNull().default("owner"),
   name: text("name").notNull(),
   description: text("description"),
   icon: text("icon"),
@@ -456,6 +468,7 @@ export const collectionItems = pgTable(
   "collection_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     collectionId: uuid("collection_id")
       .notNull()
       .references(() => collections.id, { onDelete: "cascade" }),
@@ -475,6 +488,7 @@ export const tags = pgTable(
   "tags",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    account: accountEnum("account").notNull().default("owner"),
     name: text("name").notNull(),
     color: text("color").notNull().default("#8b5cf6"),
     createdAt,

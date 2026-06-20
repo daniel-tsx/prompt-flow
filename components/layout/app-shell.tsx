@@ -5,7 +5,13 @@ import { CommandProvider } from "@/components/layout/command-provider";
 import { listProjectsForPicker } from "@/db/queries/projects";
 import { listPromptsForPicker } from "@/db/queries/prompts";
 
-export async function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({
+  children,
+  account,
+}: {
+  children: React.ReactNode;
+  account: "owner" | "demo";
+}) {
   // Keep the shell rendering even if the DB isn't reachable yet, so the page's
   // error boundary can show a friendly "connect a database" screen in context.
   const [projects, prompts] = await Promise.all([
@@ -22,11 +28,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   }));
 
   return (
-    <CommandProvider projects={projects} recentPrompts={recentPrompts}>
+    <CommandProvider projects={projects} recentPrompts={recentPrompts} account={account}>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar account={account} />
         <SidebarInset className="min-w-0">
-          <TopBar />
+          <TopBar account={account} />
           <main className="cockpit-bg flex-1">{children}</main>
         </SidebarInset>
       </SidebarProvider>

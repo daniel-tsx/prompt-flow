@@ -59,6 +59,7 @@ export default async function CollectionDetailPage({
         <CollectionToolbar
           collection={{
             id: collection.id,
+            account: collection.account,
             name: collection.name,
             description: collection.description,
             icon: collection.icon,

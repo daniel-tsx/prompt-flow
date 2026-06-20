@@ -21,7 +21,7 @@ import { NAV_GROUPS } from "@/components/layout/nav-config";
 import { useCommands } from "@/components/layout/command-provider";
 import { cn } from "@/lib/utils";
 
-export function AppSidebar() {
+export function AppSidebar({ account }: { account: "owner" | "demo" }) {
   const pathname = usePathname();
   const { openQuickCapture, openCommandMenu } = useCommands();
 
@@ -42,10 +42,12 @@ export function AppSidebar() {
         </Link>
 
         <div className="flex flex-col gap-1.5 px-1">
-          <Button onClick={() => openQuickCapture()} className="w-full justify-start gap-2" size="sm">
-            <Plus className="size-4" />
-            Quick capture
-          </Button>
+          {account === "owner" && (
+            <Button onClick={() => openQuickCapture()} className="w-full justify-start gap-2" size="sm">
+              <Plus className="size-4" />
+              Quick capture
+            </Button>
+          )}
           <Button
             onClick={openCommandMenu}
             variant="outline"

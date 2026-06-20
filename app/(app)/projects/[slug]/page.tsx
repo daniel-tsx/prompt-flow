@@ -72,6 +72,7 @@ export default async function ProjectDetailPage({
         <ProjectHeaderActions
           project={{
             id: project.id,
+            account: project.account,
             name: project.name,
             slug: project.slug,
             description: project.description,

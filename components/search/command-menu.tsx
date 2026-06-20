@@ -38,11 +38,13 @@ export function CommandMenu({
   onOpenChange,
   onCapture,
   recentPrompts,
+  readOnly = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCapture: (type?: string) => void;
   recentPrompts: RecentPrompt[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -96,7 +98,7 @@ export function CommandMenu({
         <CommandList className="max-h-[60vh]">
           <CommandEmpty>No results for “{query}”.</CommandEmpty>
 
-          {q.length < 2 && (
+          {q.length < 2 && !readOnly && (
             <CommandGroup heading="Create">
               <CommandItem value="new-prompt" onSelect={() => go("/prompts/new")}>
                 <Sparkles /> New prompt

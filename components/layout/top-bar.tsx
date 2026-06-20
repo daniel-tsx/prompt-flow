@@ -1,13 +1,22 @@
 "use client";
 
-import { Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { Eye, Lock, Plus, Search } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCommands } from "@/components/layout/command-provider";
+import { lockAccount } from "@/lib/actions/auth";
 
-export function TopBar({ title }: { title?: string }) {
+export function TopBar({
+  title,
+  account,
+}: {
+  title?: string;
+  account: "owner" | "demo";
+}) {
   const { openCommandMenu, openQuickCapture } = useCommands();
 
   return (
@@ -27,10 +36,25 @@ export function TopBar({ title }: { title?: string }) {
         <kbd className="ml-auto rounded border bg-muted px-1.5 text-[0.65rem] font-medium">⌘K</kbd>
       </button>
 
-      <Button onClick={() => openQuickCapture()} size="sm" className="gap-1.5">
-        <Plus className="size-4" />
-        <span className="hidden sm:inline">Capture</span>
-      </Button>
+      {account === "demo" ? (
+        <Button render={<Link href="/unlock" />} variant="outline" size="sm" className="gap-1.5">
+          <Eye className="size-3.5 text-amber-400" />
+          <span className="hidden sm:inline">Demo · read-only</span>
+          <span className="sm:hidden">Demo</span>
+        </Button>
+      ) : (
+        <>
+          <Button onClick={() => openQuickCapture()} size="sm" className="gap-1.5">
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Capture</span>
+          </Button>
+          <form action={lockAccount}>
+            <Button type="submit" variant="ghost" size="icon" aria-label="Lock library">
+              <Lock className="size-4" />
+            </Button>
+          </form>
+        </>
+      )}
       <ThemeToggle />
     </header>
   );

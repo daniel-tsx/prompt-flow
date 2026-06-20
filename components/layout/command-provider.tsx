@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { CommandMenu } from "@/components/search/command-menu";
 import { QuickCaptureDialog } from "@/components/notes/quick-capture-dialog";
 import type { PickerProject, RecentPrompt } from "@/types";
@@ -28,21 +29,31 @@ export function useCommands() {
 export function CommandProvider({
   projects,
   recentPrompts,
+  account,
   children,
 }: {
   projects: PickerProject[];
   recentPrompts: RecentPrompt[];
+  account: "owner" | "demo";
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const readOnly = account === "demo";
   const [commandOpen, setCommandOpen] = useState(false);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureType, setCaptureType] = useState("quick-note");
 
-  const openQuickCapture = useCallback((type = "quick-note") => {
-    setCaptureType(type);
-    setCaptureOpen(true);
-  }, []);
+  const openQuickCapture = useCallback(
+    (type = "quick-note") => {
+      if (readOnly) {
+        toast.error("This is the read-only demo — enter your passcode to capture.");
+        return;
+      }
+      setCaptureType(type);
+      setCaptureOpen(true);
+    },
+    [readOnly],
+  );
 
   const openCommandMenu = useCallback(() => setCommandOpen(true), []);
 
@@ -58,7 +69,8 @@ export function CommandProvider({
         openQuickCapture("quick-note");
       } else if (meta && e.shiftKey && key === "p") {
         e.preventDefault();
-        router.push("/prompts/new");
+        if (readOnly) toast.error("Read-only demo — enter your passcode to create.");
+        else router.push("/prompts/new");
       } else if (meta && e.shiftKey && key === "t") {
         e.preventDefault();
         openQuickCapture("task");
@@ -66,7 +78,7 @@ export function CommandProvider({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [openQuickCapture, router]);
+  }, [openQuickCapture, router, readOnly]);
 
   return (
     <CommandContext.Provider value={{ openCommandMenu, openQuickCapture }}>
@@ -76,6 +88,7 @@ export function CommandProvider({
         onOpenChange={setCommandOpen}
         onCapture={openQuickCapture}
         recentPrompts={recentPrompts}
+        readOnly={readOnly}
       />
       <QuickCaptureDialog
         open={captureOpen}
