@@ -13,6 +13,15 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Generated shadcn/ui primitives & hooks use patterns the strict
+    // React Compiler rules flag (e.g. matchMedia setState in effect). Vendored.
+    files: ["components/ui/**", "hooks/**"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

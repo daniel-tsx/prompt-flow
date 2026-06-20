@@ -51,27 +51,28 @@ export function CommandMenu({
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
-
-  useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
     debounce.current = setTimeout(() => {
+      if (query.trim().length < 2) {
+        setResults([]);
+        return;
+      }
       startTransition(async () => {
         setResults(await searchEverything(query));
       });
-    }, 180);
+    }, 160);
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
     };
   }, [query]);
 
+  function handleOpenChange(next: boolean) {
+    if (!next) setQuery("");
+    onOpenChange(next);
+  }
+
   function run(action: () => void) {
-    onOpenChange(false);
+    handleOpenChange(false);
     action();
   }
 
@@ -83,14 +84,14 @@ export function CommandMenu({
 
   async function copyRecent(p: RecentPrompt) {
     const ok = await copyToClipboard(p.promptText);
-    onOpenChange(false);
+    handleOpenChange(false);
     toast[ok ? "success" : "error"](
       ok ? `Copied "${p.title}"` : "Couldn't copy to clipboard",
     );
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} className="sm:max-w-2xl">
+    <CommandDialog open={open} onOpenChange={handleOpenChange} className="sm:max-w-2xl">
       <Command shouldFilter={false}>
         <CommandList className="max-h-[60vh]">
           <CommandEmpty>No results for “{query}”.</CommandEmpty>

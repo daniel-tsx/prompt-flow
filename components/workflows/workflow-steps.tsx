@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Check, CircleDot, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { CopyButton } from "@/components/shared/copy-button";

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
 import { Clock, Flag, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -21,8 +20,6 @@ export function RunCard({
   run: RunListItem;
   showPrompt?: boolean;
 }) {
-  const [, startTransition] = useTransition();
-
   return (
     <Card className="gap-0 p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">

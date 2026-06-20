@@ -105,7 +105,8 @@ export function RunForm({
     });
     if (res.ok) {
       toast.success("Run logged");
-      onDone ? onDone() : router.push("/runs");
+      if (onDone) onDone();
+      else router.push("/runs");
     } else {
       toast.error(res.error);
     }

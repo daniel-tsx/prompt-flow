@@ -33,6 +33,24 @@ import { avg } from "@/lib/utils";
 
 export const metadata = { title: "Reports" };
 
+/** Weekly capture counts for the last 6 weeks (kept out of render to stay pure). */
+function weeklyCaptureData(capture: { createdAt: Date | string }[]) {
+  const buckets = new Map<string, number>();
+  const now = Date.now();
+  for (let i = 5; i >= 0; i--) {
+    const wk = startOfWeek(new Date(now - i * 7 * 86_400_000), { weekStartsOn: 1 });
+    buckets.set(format(wk, "yyyy-MM-dd"), 0);
+  }
+  for (const c of capture) {
+    const key = format(startOfWeek(new Date(c.createdAt), { weekStartsOn: 1 }), "yyyy-MM-dd");
+    if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + 1);
+  }
+  return [...buckets.entries()].map(([k, v]) => ({
+    label: format(new Date(k), "MMM d"),
+    value: v,
+  }));
+}
+
 export default async function ReportsPage() {
   const [prompts, workflows, metrics, toolPerf, capture] = await Promise.all([
     listPrompts(),
@@ -50,17 +68,7 @@ export default async function ReportsPage() {
   const workflowHealth = Math.round(avg(workflows.map((w) => w.maturity)) ?? 0);
   const pressure = inboxPressure(metrics);
 
-  // Weekly capture buckets (last 6 weeks)
-  const buckets = new Map<string, number>();
-  for (let i = 5; i >= 0; i--) {
-    const wk = startOfWeek(new Date(Date.now() - i * 7 * 86_400_000), { weekStartsOn: 1 });
-    buckets.set(format(wk, "yyyy-MM-dd"), 0);
-  }
-  for (const c of capture) {
-    const key = format(startOfWeek(new Date(c.createdAt), { weekStartsOn: 1 }), "yyyy-MM-dd");
-    if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + 1);
-  }
-  const captureData = [...buckets.entries()].map(([k, v]) => ({ label: format(new Date(k), "MMM d"), value: v }));
+  const captureData = weeklyCaptureData(capture);
 
   return (
     <PageContainer>
