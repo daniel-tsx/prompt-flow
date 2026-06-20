@@ -19,19 +19,29 @@ Structured so **BetterAuth** (per-user auth) and **AI features** can be added la
 ```bash
 pnpm install
 
-# 1. Add your database connection
+# 1. Add your connection string + passcode
 cp .env.example .env.local
-#    then paste your Neon (or any Postgres) connection string into DATABASE_URL
+#    DATABASE_URL  → your Neon (or any Postgres) connection string
+#    OWNER_PASSCODE → the secret for your private account (choose your own)
 
-# 2. Create the schema and load realistic demo data
+# 2. Create the schema and load the demo data
 pnpm db:push      # push the Drizzle schema to your database
-pnpm db:seed      # seed 11 projects, 15 prompts (w/ versions + runs), 10 workflows, …
+pnpm db:seed      # seed the read-only DEMO account (11 projects, 15 prompts, …)
 
 # 3. Run it
-pnpm dev          # http://localhost:3000  → redirects to /dashboard
+pnpm dev          # http://localhost:3000  → /unlock
 ```
 
-You need a `DATABASE_URL` before the app will load — get a free Postgres database at [neon.tech](https://neon.tech). Without it, every page shows a friendly "set DATABASE_URL" screen.
+You need a `DATABASE_URL` before the app will load — get a free Postgres database at [neon.tech](https://neon.tech). Without it, every page shows a friendly "connect a database" screen.
+
+## Two accounts (lightweight passcode gate — no full auth)
+
+Opening the app shows an **/unlock** screen:
+
+- **Enter your `OWNER_PASSCODE`** → your private, fully editable library.
+- **"See the demo"** → the seeded, **read-only** showcase account.
+
+Both accounts live in the same database, partitioned by an `account` column; every query is scoped and every write is owner-only. The owner cookie is `sha256(OWNER_PASSCODE)`, so it can't be forged. `pnpm db:seed` only touches the demo account — your owner data is never wiped. Structured so BetterAuth can replace the gate later without schema changes.
 
 ## Scripts
 
