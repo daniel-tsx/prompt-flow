@@ -9,7 +9,12 @@ import {
   workflowSteps,
   type Prompt,
 } from "@/db/schema";
-import { reliabilityScore, usefulnessScore } from "@/lib/scoring";
+import {
+  promptHealthFlags,
+  reliabilityScore,
+  usefulnessScore,
+  type HealthFlag,
+} from "@/lib/scoring";
 
 export type PromptFilters = {
   search?: string;
@@ -32,6 +37,7 @@ export type PromptListItem = Prompt & {
   lastRunAt: Date | null;
   reliability: number | null;
   usefulness: number;
+  healthFlags: HealthFlag[];
 };
 
 type RunAgg = {
@@ -125,6 +131,13 @@ function enrich(
       runs,
       qualityScore: prompt.qualityScore,
       linkedWorkflowCount: workflowCount,
+    }),
+    healthFlags: promptHealthFlags({
+      status: prompt.status,
+      favorite: prompt.favorite,
+      qualityScore: prompt.qualityScore,
+      versionCount,
+      runs,
     }),
   };
 }
