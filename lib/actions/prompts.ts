@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, max, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { promptRuns, promptVersions, prompts, templates } from "@/db/schema";
-import { runAction } from "@/lib/action-result";
+import { ownerAction } from "@/lib/action-result";
 import { uniqueSlug } from "@/lib/utils";
 import {
   promptSchema,
@@ -18,7 +18,7 @@ function revalidate() {
 }
 
 export async function createPrompt(input: PromptInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = promptSchema.parse(input);
     const [row] = await db
       .insert(prompts)
@@ -40,7 +40,7 @@ export async function createPrompt(input: PromptInput) {
 }
 
 export async function updatePrompt(id: string, input: PromptInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = promptSchema.parse(input);
     const [row] = await db
       .update(prompts)
@@ -53,14 +53,14 @@ export async function updatePrompt(id: string, input: PromptInput) {
 }
 
 export async function togglePromptFavorite(id: string, favorite: boolean) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.update(prompts).set({ favorite }).where(eq(prompts.id, id));
     revalidate();
   });
 }
 
 export async function setPromptStatus(id: string, status: PromptInput["status"]) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.update(prompts).set({ status }).where(eq(prompts.id, id));
     revalidate();
   });
@@ -71,14 +71,14 @@ export async function archivePrompt(id: string) {
 }
 
 export async function deletePrompt(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(prompts).where(eq(prompts.id, id));
     revalidate();
   });
 }
 
 export async function duplicatePrompt(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const original = await db.query.prompts.findFirst({ where: eq(prompts.id, id) });
     if (!original) throw new Error("Prompt not found");
     const { id: _omit, createdAt, updatedAt, currentVersionId, slug, title, ...rest } =
@@ -106,7 +106,7 @@ export async function duplicatePrompt(id: string) {
 }
 
 export async function createPromptVersion(input: PromptVersionInput, markCurrent = true) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = promptVersionSchema.parse(input);
     const [{ value: currentMax }] = await db
       .select({ value: max(promptVersions.versionNumber) })
@@ -135,7 +135,7 @@ export async function createPromptVersion(input: PromptVersionInput, markCurrent
 }
 
 export async function setCurrentVersion(promptId: string, versionId: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const version = await db.query.promptVersions.findFirst({
       where: eq(promptVersions.id, versionId),
     });
@@ -149,7 +149,7 @@ export async function setCurrentVersion(promptId: string, versionId: string) {
 }
 
 export async function deletePromptVersion(promptId: string, versionId: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     // Keep at least one version around.
     const remaining = await db
       .select({ id: promptVersions.id })
@@ -162,7 +162,7 @@ export async function deletePromptVersion(promptId: string, versionId: string) {
 }
 
 export async function convertPromptToTemplate(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const prompt = await db.query.prompts.findFirst({ where: eq(prompts.id, id) });
     if (!prompt) throw new Error("Prompt not found");
     const [row] = await db
@@ -181,7 +181,7 @@ export async function convertPromptToTemplate(id: string) {
 }
 
 export async function deletePromptRun(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(promptRuns).where(eq(promptRuns.id, id));
     revalidate();
   });

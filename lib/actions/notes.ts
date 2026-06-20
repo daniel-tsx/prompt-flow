@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notes, prompts, promptVersions, templates, workflows } from "@/db/schema";
-import { runAction } from "@/lib/action-result";
+import { ownerAction } from "@/lib/action-result";
 import { uniqueSlug } from "@/lib/utils";
 import {
   noteSchema,
@@ -18,7 +18,7 @@ function revalidate() {
 }
 
 export async function createNote(input: NoteInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = noteSchema.parse(input);
     const [row] = await db.insert(notes).values(data).returning({ id: notes.id });
     revalidate();
@@ -27,7 +27,7 @@ export async function createNote(input: NoteInput) {
 }
 
 export async function quickCapture(input: QuickCaptureInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = quickCaptureSchema.parse(input);
     const [row] = await db
       .insert(notes)
@@ -39,7 +39,7 @@ export async function quickCapture(input: QuickCaptureInput) {
 }
 
 export async function updateNote(id: string, input: NoteInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = noteSchema.parse(input);
     await db.update(notes).set(data).where(eq(notes.id, id));
     revalidate();
@@ -47,28 +47,28 @@ export async function updateNote(id: string, input: NoteInput) {
 }
 
 export async function setNoteStatus(id: string, status: NoteInput["status"]) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.update(notes).set({ status }).where(eq(notes.id, id));
     revalidate();
   });
 }
 
 export async function toggleNotePin(id: string, pinned: boolean) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.update(notes).set({ pinned }).where(eq(notes.id, id));
     revalidate();
   });
 }
 
 export async function deleteNote(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(notes).where(eq(notes.id, id));
     revalidate();
   });
 }
 
 export async function convertNoteToPrompt(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const note = await db.query.notes.findFirst({ where: eq(notes.id, id) });
     if (!note) throw new Error("Note not found");
     const [prompt] = await db
@@ -103,7 +103,7 @@ export async function convertNoteToPrompt(id: string) {
 }
 
 export async function convertNoteToWorkflow(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const note = await db.query.notes.findFirst({ where: eq(notes.id, id) });
     if (!note) throw new Error("Note not found");
     const [workflow] = await db
@@ -128,7 +128,7 @@ export async function convertNoteToWorkflow(id: string) {
 }
 
 export async function convertNoteToTemplate(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const note = await db.query.notes.findFirst({ where: eq(notes.id, id) });
     if (!note) throw new Error("Note not found");
     const [template] = await db

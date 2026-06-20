@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { workflowSteps, workflows } from "@/db/schema";
-import { runAction } from "@/lib/action-result";
+import { ownerAction } from "@/lib/action-result";
 import { uniqueSlug } from "@/lib/utils";
 import { workflowSchema, type WorkflowInput } from "@/lib/validations";
 
@@ -31,7 +31,7 @@ async function replaceSteps(workflowId: string, steps: WorkflowInput["steps"]) {
 }
 
 export async function createWorkflow(input: WorkflowInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const { steps, ...data } = workflowSchema.parse(input);
     const [row] = await db
       .insert(workflows)
@@ -44,7 +44,7 @@ export async function createWorkflow(input: WorkflowInput) {
 }
 
 export async function updateWorkflow(id: string, input: WorkflowInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const { steps, ...data } = workflowSchema.parse(input);
     const [row] = await db
       .update(workflows)
@@ -58,28 +58,28 @@ export async function updateWorkflow(id: string, input: WorkflowInput) {
 }
 
 export async function toggleWorkflowFavorite(id: string, favorite: boolean) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.update(workflows).set({ favorite }).where(eq(workflows.id, id));
     revalidate();
   });
 }
 
 export async function setWorkflowStatus(id: string, status: WorkflowInput["status"]) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.update(workflows).set({ status }).where(eq(workflows.id, id));
     revalidate();
   });
 }
 
 export async function deleteWorkflow(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(workflows).where(eq(workflows.id, id));
     revalidate();
   });
 }
 
 export async function duplicateWorkflow(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const original = await db.query.workflows.findFirst({
       where: eq(workflows.id, id),
       with: { steps: { orderBy: (s, { asc }) => [asc(s.order)] } },

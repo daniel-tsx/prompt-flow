@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
-import { runAction } from "@/lib/action-result";
+import { ownerAction } from "@/lib/action-result";
 import { uniqueSlug } from "@/lib/utils";
 import { projectSchema, type ProjectInput } from "@/lib/validations";
 
 export async function createProject(input: ProjectInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = projectSchema.parse(input);
     const [row] = await db
       .insert(projects)
@@ -21,7 +21,7 @@ export async function createProject(input: ProjectInput) {
 }
 
 export async function updateProject(id: string, input: ProjectInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = projectSchema.parse(input);
     const [row] = await db
       .update(projects)
@@ -34,7 +34,7 @@ export async function updateProject(id: string, input: ProjectInput) {
 }
 
 export async function deleteProject(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(projects).where(eq(projects.id, id));
     revalidatePath("/", "layout");
   });

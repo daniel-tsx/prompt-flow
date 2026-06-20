@@ -1,3 +1,5 @@
+import { assertOwner } from "@/lib/account";
+
 export type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string };
@@ -22,4 +24,14 @@ export async function runAction<T>(
       err instanceof Error ? err.message : "Something went wrong. Please try again.";
     return { ok: false, error: message };
   }
+}
+
+/** Like runAction, but rejects writes from the read-only demo account. */
+export async function ownerAction<T>(
+  fn: () => Promise<T>,
+): Promise<ActionResult<T>> {
+  return runAction(async () => {
+    await assertOwner();
+    return fn();
+  });
 }

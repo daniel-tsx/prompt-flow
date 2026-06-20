@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   collectionItems,
@@ -14,7 +15,8 @@ import {
   workflowSteps,
   workflows,
 } from "@/db/schema";
-import { runAction } from "@/lib/action-result";
+import { ownerAction, runAction } from "@/lib/action-result";
+import { getAccount } from "@/lib/account";
 import {
   buildBackup,
   notesToCsv,
@@ -23,9 +25,10 @@ import {
   type FullBackup,
 } from "@/lib/export";
 
-/** Export the entire library as a JSON backup string. */
+/** Export the current account's library as a JSON backup string. */
 export async function exportAllData() {
   return runAction(async () => {
+    const account = await getAccount();
     const [
       allProjects,
       allPrompts,
@@ -38,16 +41,16 @@ export async function exportAllData() {
       allCollections,
       allItems,
     ] = await Promise.all([
-      db.select().from(projects),
-      db.select().from(prompts),
-      db.select().from(promptVersions),
-      db.select().from(promptRuns),
-      db.select().from(workflows),
-      db.select().from(workflowSteps),
-      db.select().from(notes),
-      db.select().from(templates),
-      db.select().from(collections),
-      db.select().from(collectionItems),
+      db.select().from(projects).where(eq(projects.account, account)),
+      db.select().from(prompts).where(eq(prompts.account, account)),
+      db.select().from(promptVersions).where(eq(promptVersions.account, account)),
+      db.select().from(promptRuns).where(eq(promptRuns.account, account)),
+      db.select().from(workflows).where(eq(workflows.account, account)),
+      db.select().from(workflowSteps).where(eq(workflowSteps.account, account)),
+      db.select().from(notes).where(eq(notes.account, account)),
+      db.select().from(templates).where(eq(templates.account, account)),
+      db.select().from(collections).where(eq(collections.account, account)),
+      db.select().from(collectionItems).where(eq(collectionItems.account, account)),
     ]);
 
     return buildBackup({
@@ -67,16 +70,18 @@ export async function exportAllData() {
 
 export async function exportPromptsMarkdown() {
   return runAction(async () => {
-    const rows = await db.select().from(prompts);
+    const account = await getAccount();
+    const rows = await db.select().from(prompts).where(eq(prompts.account, account));
     return promptsToMarkdown(rows);
   });
 }
 
 export async function exportWorkflowsMarkdown() {
   return runAction(async () => {
+    const account = await getAccount();
     const [wfRows, stepRows] = await Promise.all([
-      db.select().from(workflows),
-      db.select().from(workflowSteps),
+      db.select().from(workflows).where(eq(workflows.account, account)),
+      db.select().from(workflowSteps).where(eq(workflowSteps.account, account)),
     ]);
     return workflowsToMarkdown(
       wfRows.map((workflow) => ({
@@ -89,14 +94,15 @@ export async function exportWorkflowsMarkdown() {
 
 export async function exportNotesCsv() {
   return runAction(async () => {
-    const rows = await db.select().from(notes);
+    const account = await getAccount();
+    const rows = await db.select().from(notes).where(eq(notes.account, account));
     return notesToCsv(rows);
   });
 }
 
-/** Replace all data with the contents of a JSON backup. */
+/** Replace the owner account's data with a JSON backup (demo data is untouched). */
 export async function importBackup(json: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     let parsed: FullBackup;
     try {
       // Revive ISO date strings back into Date objects for timestamp columns.
@@ -116,32 +122,36 @@ export async function importBackup(json: string) {
       throw new Error("This doesn't look like a PromptFlow backup");
     }
 
-    // Clear in reverse FK order
-    await db.delete(collectionItems);
-    await db.delete(collections);
-    await db.delete(templates);
-    await db.delete(notes);
-    await db.delete(workflowSteps);
-    await db.delete(workflows);
-    await db.delete(promptRuns);
-    await db.delete(promptVersions);
-    await db.delete(prompts);
-    await db.delete(projects);
+    // Clear ONLY the owner account, in reverse FK order. Demo stays intact.
+    await db.delete(collectionItems).where(eq(collectionItems.account, "owner"));
+    await db.delete(collections).where(eq(collections.account, "owner"));
+    await db.delete(templates).where(eq(templates.account, "owner"));
+    await db.delete(notes).where(eq(notes.account, "owner"));
+    await db.delete(workflowSteps).where(eq(workflowSteps.account, "owner"));
+    await db.delete(workflows).where(eq(workflows.account, "owner"));
+    await db.delete(promptRuns).where(eq(promptRuns.account, "owner"));
+    await db.delete(promptVersions).where(eq(promptVersions.account, "owner"));
+    await db.delete(prompts).where(eq(prompts.account, "owner"));
+    await db.delete(projects).where(eq(projects.account, "owner"));
+
+    // Force every imported row into the owner account.
+    const asOwner = <T extends Record<string, unknown>>(rows: T[] | undefined) =>
+      (rows ?? []).map((r) => ({ ...r, account: "owner" as const }));
 
     const insertIf = async <T>(table: Parameters<typeof db.insert>[0], rows: T[]) => {
       if (rows?.length) await db.insert(table).values(rows as never);
     };
 
-    await insertIf(projects, parsed.projects);
-    await insertIf(prompts, parsed.prompts);
-    await insertIf(promptVersions, parsed.promptVersions);
-    await insertIf(promptRuns, parsed.promptRuns);
-    await insertIf(workflows, parsed.workflows);
-    await insertIf(workflowSteps, parsed.workflowSteps);
-    await insertIf(notes, parsed.notes);
-    await insertIf(templates, parsed.templates);
-    await insertIf(collections, parsed.collections);
-    await insertIf(collectionItems, parsed.collectionItems);
+    await insertIf(projects, asOwner(parsed.projects));
+    await insertIf(prompts, asOwner(parsed.prompts));
+    await insertIf(promptVersions, asOwner(parsed.promptVersions));
+    await insertIf(promptRuns, asOwner(parsed.promptRuns));
+    await insertIf(workflows, asOwner(parsed.workflows));
+    await insertIf(workflowSteps, asOwner(parsed.workflowSteps));
+    await insertIf(notes, asOwner(parsed.notes));
+    await insertIf(templates, asOwner(parsed.templates));
+    await insertIf(collections, asOwner(parsed.collections));
+    await insertIf(collectionItems, asOwner(parsed.collectionItems));
 
     revalidatePath("/", "layout");
     return {

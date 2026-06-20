@@ -12,7 +12,8 @@ import {
   workflowSteps,
   workflows,
 } from "@/db/schema";
-import { runAction } from "@/lib/action-result";
+import { ownerAction, runAction } from "@/lib/action-result";
+import { getAccount } from "@/lib/account";
 import {
   collectionToMarkdown,
   promptToMarkdown,
@@ -30,7 +31,7 @@ function revalidate() {
 }
 
 export async function createCollection(input: CollectionInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = collectionSchema.parse(input);
     const [row] = await db.insert(collections).values(data).returning({ id: collections.id });
     revalidate();
@@ -39,7 +40,7 @@ export async function createCollection(input: CollectionInput) {
 }
 
 export async function updateCollection(id: string, input: CollectionInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = collectionSchema.parse(input);
     await db.update(collections).set(data).where(eq(collections.id, id));
     revalidate();
@@ -47,14 +48,14 @@ export async function updateCollection(id: string, input: CollectionInput) {
 }
 
 export async function deleteCollection(id: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(collections).where(eq(collections.id, id));
     revalidate();
   });
 }
 
 export async function addCollectionItem(input: CollectionItemInput) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     const data = collectionItemSchema.parse(input);
     const existing = await db
       .select({ id: collectionItems.id })
@@ -74,7 +75,7 @@ export async function addCollectionItem(input: CollectionItemInput) {
 }
 
 export async function removeCollectionItem(rowId: string) {
-  return runAction(async () => {
+  return ownerAction(async () => {
     await db.delete(collectionItems).where(eq(collectionItems.id, rowId));
     revalidate();
   });
@@ -82,7 +83,10 @@ export async function removeCollectionItem(rowId: string) {
 
 export async function exportCollectionMarkdown(id: string) {
   return runAction(async () => {
-    const collection = await db.query.collections.findFirst({ where: eq(collections.id, id) });
+    const account = await getAccount();
+    const collection = await db.query.collections.findFirst({
+      where: and(eq(collections.id, id), eq(collections.account, account)),
+    });
     if (!collection) throw new Error("Collection not found");
     const items = await db
       .select()
