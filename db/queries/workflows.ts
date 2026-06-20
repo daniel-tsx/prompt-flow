@@ -143,6 +143,13 @@ export async function getWorkflowById(id: string) {
   });
 }
 
+export async function getWorkflowForEdit(slug: string) {
+  return db.query.workflows.findFirst({
+    where: eq(workflows.slug, slug),
+    with: { steps: { orderBy: (s, { asc }) => [asc(s.order)] } },
+  });
+}
+
 export async function listWorkflowsForPicker() {
   return db
     .select({ id: workflows.id, title: workflows.title, slug: workflows.slug })
