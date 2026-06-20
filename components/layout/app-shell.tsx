@@ -6,9 +6,11 @@ import { listProjectsForPicker } from "@/db/queries/projects";
 import { listPromptsForPicker } from "@/db/queries/prompts";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
+  // Keep the shell rendering even if the DB isn't reachable yet, so the page's
+  // error boundary can show a friendly "connect a database" screen in context.
   const [projects, prompts] = await Promise.all([
-    listProjectsForPicker(),
-    listPromptsForPicker(),
+    listProjectsForPicker().catch(() => []),
+    listPromptsForPicker().catch(() => []),
   ]);
 
   const recentPrompts = prompts.slice(0, 6).map((p) => ({

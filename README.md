@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PromptFlow Library
 
-## Getting Started
+A personal **AI command library** — store, organize, version, reuse, and evaluate the prompts, workflows, notes, and ideas you use across Codex, Claude Code, Cursor, ChatGPT, and image/video models. Not a SaaS; a serious single-user operating system for prompt work, with a fast capture inbox built in.
 
-First, run the development server:
+> Status: `current`. Dark productivity cockpit. Desktop-first, responsive.
+
+## Stack
+
+- **Next.js 16** (App Router, Server Actions) · **TypeScript** · **React 19**
+- **Tailwind CSS v4** + **shadcn/ui** (base-ui primitives, `nova` style)
+- **Drizzle ORM** on **Neon** (PostgreSQL)
+- **React Hook Form + Zod**, **Recharts**, **date-fns**, **lucide-react**
+- Markdown editor/preview (`react-markdown` + `remark-gfm`), command palette (`cmdk`), toasts (`sonner`)
+
+Structured so **BetterAuth** (per-user auth) and **AI features** can be added later without a rewrite.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+
+# 1. Add your database connection
+cp .env.example .env.local
+#    then paste your Neon (or any Postgres) connection string into DATABASE_URL
+
+# 2. Create the schema and load realistic demo data
+pnpm db:push      # push the Drizzle schema to your database
+pnpm db:seed      # seed 11 projects, 15 prompts (w/ versions + runs), 10 workflows, …
+
+# 3. Run it
+pnpm dev          # http://localhost:3000  → redirects to /dashboard
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You need a `DATABASE_URL` before the app will load — get a free Postgres database at [neon.tech](https://neon.tech). Without it, every page shows a friendly "set DATABASE_URL" screen.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | What it does |
+| --- | --- |
+| `pnpm dev` | Start the dev server |
+| `pnpm build` / `pnpm start` | Production build / serve |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm lint` | ESLint |
+| `pnpm db:generate` | Generate a SQL migration from the schema |
+| `pnpm db:push` | Push the schema directly (fastest for personal use) |
+| `pnpm db:migrate` | Apply generated migrations |
+| `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm db:seed` | Reset + load demo data |
 
-## Learn More
+## What's inside
 
-To learn more about Next.js, take a look at the following resources:
+- **Dashboard** — counters, prompt-quality trend, runs-by-tool, category distribution, inbox pressure, most-successful / needs-improvement prompts, top projects.
+- **Prompts** — card/table library with filters & search; detail with 7 tabs (overview, current, **versions** w/ line-diff, **runs**, notes, workflows, project); markdown editor with section helpers and scores.
+- **Workflows** — builder with reorderable steps + linked prompts; detail step-runner with progress and copy-to-clipboard.
+- **Inbox & Tasks** — global quick capture (⌘⇧N), 9 inbox views, convert notes → prompt/workflow/template, tasks grouped by due date.
+- **Templates** — reusable templates with `{{variables}}`; create prompt/workflow from a template.
+- **Collections** — curated packs; export a pack as Markdown.
+- **Projects · Runs · Reports · Settings** — project hubs, run log, library-health analytics, JSON/Markdown/CSV import & export.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Keyboard shortcuts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Shortcut | Action |
+| --- | --- |
+| `⌘/Ctrl + K` | Command palette (search + create + copy recent prompt) |
+| `⌘/Ctrl + ⇧ + N` | Quick capture (note) |
+| `⌘/Ctrl + ⇧ + P` | New prompt |
+| `⌘/Ctrl + ⇧ + T` | New task |
+| `⌘/Ctrl + ↵` | Save in an editor |
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/                 # routes — (app)/ group holds the shell + all feature pages
+  (app)/layout.tsx   # cockpit shell (sidebar, top bar, command palette, quick capture)
+components/          # layout, forms, editor, prompts, workflows, notes, runs, charts, shared, settings
+db/
+  schema.ts          # Drizzle schema (10 entities + collection items)
+  queries/           # all reads (prompts, workflows, notes, runs, stats, search, …)
+  index.ts           # lazy Neon client (never throws at build time)
+lib/
+  validations/       # Zod schemas
+  scoring.ts         # reliability, usefulness, workflow maturity, inbox pressure, prompt health
+  actions/           # Server Actions (mutations) per entity + import/export
+  export.ts          # JSON / Markdown / CSV builders
+  constants.ts       # enum options → labels, accent colors, icons (the design language)
+seed/                # seed runner   ·   lib/seed-data/ holds the data
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All data access lives in `db/queries`; all mutations are Server Actions in `lib/actions`; calculated metrics live in `lib/scoring`. Pages are `force-dynamic` (personal data), and the database client is lazy so `pnpm build` works without a connection.
