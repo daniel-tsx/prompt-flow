@@ -28,8 +28,15 @@ export function OptionSelect({
   id?: string;
   ariaInvalid?: boolean;
 }) {
+  // Map value → label so the trigger shows the label (not the raw value/id).
+  const items = Object.fromEntries(options.map((o) => [o.value, o.label]));
+
   return (
-    <Select value={value ?? null} onValueChange={(v) => onChange(v ?? "")}>
+    <Select
+      value={value ?? null}
+      onValueChange={(v) => onChange(v ?? "")}
+      items={items}
+    >
       <SelectTrigger id={id} className={cn("w-full", className)} aria-invalid={ariaInvalid}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
