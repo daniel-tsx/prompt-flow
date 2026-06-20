@@ -1,9 +1,12 @@
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/db";
 import { templates, type Template } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export async function listTemplates(filters: { search?: string; templateType?: string } = {}) {
+  const account = await getAccount();
   const conditions = [];
+  conditions.push(eq(templates.account, account));
   if (filters.templateType)
     conditions.push(eq(templates.templateType, filters.templateType as Template["templateType"]));
   if (filters.search) {
@@ -20,5 +23,8 @@ export async function listTemplates(filters: { search?: string; templateType?: s
 }
 
 export async function getTemplateById(id: string) {
-  return db.query.templates.findFirst({ where: eq(templates.id, id) });
+  const account = await getAccount();
+  return db.query.templates.findFirst({
+    where: and(eq(templates.id, id), eq(templates.account, account)),
+  });
 }

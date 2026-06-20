@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notes, projects, type Note } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export type NoteFilters = {
   search?: string;
@@ -19,7 +20,9 @@ export type NoteListItem = Note & {
 };
 
 export async function listNotes(filters: NoteFilters = {}): Promise<NoteListItem[]> {
+  const account = await getAccount();
   const conditions = [];
+  conditions.push(eq(notes.account, account));
 
   switch (filters.view) {
     case "tasks":
@@ -83,15 +86,17 @@ export async function listNotes(filters: NoteFilters = {}): Promise<NoteListItem
 }
 
 export async function getNoteById(id: string) {
+  const account = await getAccount();
   return db.query.notes.findFirst({
-    where: eq(notes.id, id),
+    where: and(eq(notes.id, id), eq(notes.account, account)),
     with: { project: true, prompt: true, workflow: true },
   });
 }
 
 /** Tasks grouped for the Tasks page. */
 export async function listTasks(filters: { priority?: string; projectId?: string } = {}) {
-  const conditions = [eq(notes.noteType, "task")];
+  const account = await getAccount();
+  const conditions = [eq(notes.account, account), eq(notes.noteType, "task")];
   if (filters.priority) conditions.push(eq(notes.priority, filters.priority as Note["priority"]));
   if (filters.projectId) conditions.push(eq(notes.relatedProjectId, filters.projectId));
 
@@ -114,26 +119,31 @@ export async function listTasks(filters: { priority?: string; projectId?: string
 }
 
 export async function recentNotes(limit = 6) {
+  const account = await getAccount();
   return db
     .select()
     .from(notes)
-    .where(sql`${notes.status} <> 'archived'`)
+    .where(and(eq(notes.account, account), sql`${notes.status} <> 'archived'`))
     .orderBy(desc(notes.createdAt))
     .limit(limit);
 }
 
 /** Aggregate metrics used by the dashboard + inbox-pressure calc. */
 export async function inboxMetrics() {
+  const account = await getAccount();
+  const scope = eq(notes.account, account);
+
   const [inbox] = await db
     .select({ c: sql<number>`count(*)::int` })
     .from(notes)
-    .where(eq(notes.status, "inbox"));
+    .where(and(scope, eq(notes.status, "inbox")));
 
   const [overdue] = await db
     .select({ c: sql<number>`count(*)::int` })
     .from(notes)
     .where(
       and(
+        scope,
         eq(notes.noteType, "task"),
         sql`${notes.status} NOT IN ('done','archived')`,
         sql`${notes.dueDate} < now()`,
@@ -144,7 +154,7 @@ export async function inboxMetrics() {
     .select({ c: sql<number>`count(*)::int` })
     .from(notes)
     .where(
-      and(eq(notes.priority, "high"), sql`${notes.status} NOT IN ('done','archived')`),
+      and(scope, eq(notes.priority, "high"), sql`${notes.status} NOT IN ('done','archived')`),
     );
 
   const [unconverted] = await db
@@ -152,6 +162,7 @@ export async function inboxMetrics() {
     .from(notes)
     .where(
       and(
+        scope,
         sql`${notes.noteType} IN ('prompt-idea','workflow-idea')`,
         sql`${notes.status} NOT IN ('converted','done','archived')`,
       ),
@@ -167,11 +178,13 @@ export async function inboxMetrics() {
 
 /** Tasks due today or earlier and still open. */
 export async function tasksDueSoon(limit = 8) {
+  const account = await getAccount();
   return db
     .select()
     .from(notes)
     .where(
       and(
+        eq(notes.account, account),
         eq(notes.noteType, "task"),
         sql`${notes.status} NOT IN ('done','archived')`,
         sql`${notes.dueDate} IS NOT NULL`,
@@ -182,10 +195,11 @@ export async function tasksDueSoon(limit = 8) {
 }
 
 export async function pinnedNotes() {
+  const account = await getAccount();
   return db
     .select()
     .from(notes)
-    .where(and(eq(notes.pinned, true), sql`${notes.status} <> 'archived'`))
+    .where(and(eq(notes.account, account), eq(notes.pinned, true), sql`${notes.status} <> 'archived'`))
     .orderBy(desc(notes.updatedAt));
 }
 

@@ -1,4 +1,4 @@
-import { ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   collections,
@@ -11,6 +11,7 @@ import {
   workflowSteps,
   workflows,
 } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export type SearchResult = {
   type:
@@ -33,6 +34,7 @@ export async function globalSearch(query: string, limit = 8): Promise<SearchResu
   const q = query.trim();
   if (!q) return [];
   const like = `%${q}%`;
+  const account = await getAccount();
 
   const [
     promptRows,
@@ -48,7 +50,7 @@ export async function globalSearch(query: string, limit = 8): Promise<SearchResu
     db
       .select({ id: prompts.id, slug: prompts.slug, title: prompts.title, category: prompts.category })
       .from(prompts)
-      .where(or(ilike(prompts.title, like), ilike(prompts.description, like), ilike(prompts.promptText, like)))
+      .where(and(eq(prompts.account, account), or(ilike(prompts.title, like), ilike(prompts.description, like), ilike(prompts.promptText, like))))
       .limit(limit),
     db
       .select({
@@ -60,44 +62,44 @@ export async function globalSearch(query: string, limit = 8): Promise<SearchResu
       })
       .from(promptVersions)
       .innerJoin(prompts, sql`${prompts.id} = ${promptVersions.promptId}`)
-      .where(or(ilike(promptVersions.title, like), ilike(promptVersions.promptText, like)))
+      .where(and(eq(promptVersions.account, account), or(ilike(promptVersions.title, like), ilike(promptVersions.promptText, like))))
       .limit(limit),
     db
       .select({ id: promptRuns.id, title: promptRuns.title, slug: prompts.slug })
       .from(promptRuns)
       .innerJoin(prompts, sql`${prompts.id} = ${promptRuns.promptId}`)
-      .where(or(ilike(promptRuns.title, like), ilike(promptRuns.taskDescription, like), ilike(promptRuns.outputSummary, like)))
+      .where(and(eq(promptRuns.account, account), or(ilike(promptRuns.title, like), ilike(promptRuns.taskDescription, like), ilike(promptRuns.outputSummary, like))))
       .limit(limit),
     db
       .select({ id: workflows.id, slug: workflows.slug, title: workflows.title, type: workflows.workflowType })
       .from(workflows)
-      .where(or(ilike(workflows.title, like), ilike(workflows.description, like), ilike(workflows.outcome, like)))
+      .where(and(eq(workflows.account, account), or(ilike(workflows.title, like), ilike(workflows.description, like), ilike(workflows.outcome, like))))
       .limit(limit),
     db
       .select({ id: workflowSteps.id, title: workflowSteps.title, workflowSlug: workflows.slug })
       .from(workflowSteps)
       .innerJoin(workflows, sql`${workflows.id} = ${workflowSteps.workflowId}`)
-      .where(or(ilike(workflowSteps.title, like), ilike(workflowSteps.instruction, like)))
+      .where(and(eq(workflowSteps.account, account), or(ilike(workflowSteps.title, like), ilike(workflowSteps.instruction, like))))
       .limit(limit),
     db
       .select({ id: notes.id, title: notes.title, type: notes.noteType })
       .from(notes)
-      .where(or(ilike(notes.title, like), ilike(notes.body, like)))
+      .where(and(eq(notes.account, account), or(ilike(notes.title, like), ilike(notes.body, like))))
       .limit(limit),
     db
       .select({ id: templates.id, name: templates.name, type: templates.templateType })
       .from(templates)
-      .where(or(ilike(templates.name, like), ilike(templates.description, like), ilike(templates.content, like)))
+      .where(and(eq(templates.account, account), or(ilike(templates.name, like), ilike(templates.description, like), ilike(templates.content, like))))
       .limit(limit),
     db
       .select({ id: collections.id, name: collections.name, type: collections.collectionType })
       .from(collections)
-      .where(or(ilike(collections.name, like), ilike(collections.description, like)))
+      .where(and(eq(collections.account, account), or(ilike(collections.name, like), ilike(collections.description, like))))
       .limit(limit),
     db
       .select({ id: projects.id, slug: projects.slug, name: projects.name, type: projects.type })
       .from(projects)
-      .where(or(ilike(projects.name, like), ilike(projects.description, like)))
+      .where(and(eq(projects.account, account), or(ilike(projects.name, like), ilike(projects.description, like))))
       .limit(limit),
   ]);
 

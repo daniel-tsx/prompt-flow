@@ -16,6 +16,7 @@ import {
   usefulnessScore,
   type HealthFlag,
 } from "@/lib/scoring";
+import { getAccount } from "@/lib/account";
 
 export type PromptFilters = {
   search?: string;
@@ -146,7 +147,9 @@ function enrich(
 export async function listPrompts(
   filters: PromptFilters = {},
 ): Promise<PromptListItem[]> {
+  const account = await getAccount();
   const conditions = [];
+  conditions.push(eq(prompts.account, account));
 
   if (!filters.includeArchived && filters.status !== "archived") {
     conditions.push(sql`${prompts.status} <> 'archived'`);
@@ -192,8 +195,9 @@ export async function listPrompts(
 }
 
 export async function getPromptBySlug(slug: string) {
+  const account = await getAccount();
   const prompt = await db.query.prompts.findFirst({
-    where: eq(prompts.slug, slug),
+    where: and(eq(prompts.slug, slug), eq(prompts.account, account)),
     with: {
       project: true,
       versions: { orderBy: (v, { desc }) => [desc(v.versionNumber)] },
@@ -239,14 +243,21 @@ export async function getPromptBySlug(slug: string) {
 export type PromptDetail = NonNullable<Awaited<ReturnType<typeof getPromptBySlug>>>;
 
 export async function getPromptById(id: string) {
-  return db.query.prompts.findFirst({ where: eq(prompts.id, id) });
+  const account = await getAccount();
+  return db.query.prompts.findFirst({
+    where: and(eq(prompts.id, id), eq(prompts.account, account)),
+  });
 }
 
 export async function getPromptForEdit(slug: string) {
-  return db.query.prompts.findFirst({ where: eq(prompts.slug, slug) });
+  const account = await getAccount();
+  return db.query.prompts.findFirst({
+    where: and(eq(prompts.slug, slug), eq(prompts.account, account)),
+  });
 }
 
 export async function listPromptsForPicker() {
+  const account = await getAccount();
   return db
     .select({
       id: prompts.id,
@@ -256,7 +267,7 @@ export async function listPromptsForPicker() {
       promptText: prompts.promptText,
     })
     .from(prompts)
-    .where(sql`${prompts.status} <> 'archived'`)
+    .where(and(eq(prompts.account, account), sql`${prompts.status} <> 'archived'`))
     .orderBy(desc(prompts.updatedAt));
 }
 

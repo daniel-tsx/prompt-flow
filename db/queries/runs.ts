@@ -6,6 +6,7 @@ import {
   prompts,
   type PromptRun,
 } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export type RunFilters = {
   search?: string;
@@ -22,7 +23,9 @@ export type RunListItem = PromptRun & {
 };
 
 export async function listRuns(filters: RunFilters = {}): Promise<RunListItem[]> {
+  const account = await getAccount();
   const conditions = [];
+  conditions.push(eq(promptRuns.account, account));
   if (filters.promptId) conditions.push(eq(promptRuns.promptId, filters.promptId));
   if (filters.projectId) conditions.push(eq(promptRuns.projectId, filters.projectId));
   if (filters.toolUsed) conditions.push(eq(promptRuns.toolUsed, filters.toolUsed as PromptRun["toolUsed"]));
@@ -66,26 +69,33 @@ export async function recentRuns(limit = 6) {
 }
 
 export async function runsByTool() {
+  const account = await getAccount();
   return db
     .select({
       tool: promptRuns.toolUsed,
       count: sql<number>`count(*)::int`,
     })
     .from(promptRuns)
+    .where(eq(promptRuns.account, account))
     .groupBy(promptRuns.toolUsed)
     .orderBy(desc(sql`count(*)`));
 }
 
 export async function runsByResult() {
+  const account = await getAccount();
   return db
     .select({
       result: promptRuns.resultStatus,
       count: sql<number>`count(*)::int`,
     })
     .from(promptRuns)
+    .where(eq(promptRuns.account, account))
     .groupBy(promptRuns.resultStatus);
 }
 
 export async function runById(id: string) {
-  return db.query.promptRuns.findFirst({ where: eq(promptRuns.id, id) });
+  const account = await getAccount();
+  return db.query.promptRuns.findFirst({
+    where: and(eq(promptRuns.id, id), eq(promptRuns.account, account)),
+  });
 }

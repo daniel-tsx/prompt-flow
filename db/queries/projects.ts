@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   notes,
@@ -8,6 +8,7 @@ import {
   workflows,
   type Project,
 } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export type ProjectListItem = Project & {
   promptCount: number;
@@ -17,24 +18,33 @@ export type ProjectListItem = Project & {
 };
 
 export async function listProjects(): Promise<ProjectListItem[]> {
-  const rows = await db.select().from(projects).orderBy(projects.name);
+  const account = await getAccount();
+  const rows = await db
+    .select()
+    .from(projects)
+    .where(eq(projects.account, account))
+    .orderBy(projects.name);
 
   const [promptCounts, workflowCounts, noteCounts, runCounts] = await Promise.all([
     db
       .select({ id: prompts.relatedProjectId, c: sql<number>`count(*)::int` })
       .from(prompts)
+      .where(eq(prompts.account, account))
       .groupBy(prompts.relatedProjectId),
     db
       .select({ id: workflows.relatedProjectId, c: sql<number>`count(*)::int` })
       .from(workflows)
+      .where(eq(workflows.account, account))
       .groupBy(workflows.relatedProjectId),
     db
       .select({ id: notes.relatedProjectId, c: sql<number>`count(*)::int` })
       .from(notes)
+      .where(eq(notes.account, account))
       .groupBy(notes.relatedProjectId),
     db
       .select({ id: promptRuns.projectId, c: sql<number>`count(*)::int` })
       .from(promptRuns)
+      .where(eq(promptRuns.account, account))
       .groupBy(promptRuns.projectId),
   ]);
 
@@ -56,6 +66,7 @@ export async function listProjects(): Promise<ProjectListItem[]> {
 }
 
 export async function listProjectsForPicker() {
+  const account = await getAccount();
   return db
     .select({
       id: projects.id,
@@ -64,12 +75,14 @@ export async function listProjectsForPicker() {
       status: projects.status,
     })
     .from(projects)
+    .where(eq(projects.account, account))
     .orderBy(projects.name);
 }
 
 export async function getProjectBySlug(slug: string) {
+  const account = await getAccount();
   const project = await db.query.projects.findFirst({
-    where: eq(projects.slug, slug),
+    where: and(eq(projects.slug, slug), eq(projects.account, account)),
   });
   if (!project) return null;
 
@@ -107,5 +120,8 @@ export async function getProjectBySlug(slug: string) {
 }
 
 export async function getProjectById(id: string) {
-  return db.query.projects.findFirst({ where: eq(projects.id, id) });
+  const account = await getAccount();
+  return db.query.projects.findFirst({
+    where: and(eq(projects.id, id), eq(projects.account, account)),
+  });
 }

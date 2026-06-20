@@ -9,6 +9,7 @@ import {
   type Workflow,
 } from "@/db/schema";
 import { workflowMaturityScore } from "@/lib/scoring";
+import { getAccount } from "@/lib/account";
 
 export type WorkflowFilters = {
   search?: string;
@@ -31,7 +32,9 @@ export type WorkflowListItem = Workflow & {
 export async function listWorkflows(
   filters: WorkflowFilters = {},
 ): Promise<WorkflowListItem[]> {
+  const account = await getAccount();
   const conditions = [];
+  conditions.push(eq(workflows.account, account));
   if (!filters.includeArchived && filters.status !== "archived") {
     conditions.push(sql`${workflows.status} <> 'archived'`);
   }
@@ -69,7 +72,8 @@ export async function listWorkflows(
       workflowId: workflowSteps.workflowId,
       linkedPromptId: workflowSteps.linkedPromptId,
     })
-    .from(workflowSteps);
+    .from(workflowSteps)
+    .where(eq(workflowSteps.account, account));
 
   const stepCounts = new Map<string, number>();
   const linkedCounts = new Map<string, number>();
@@ -101,8 +105,9 @@ export async function listWorkflows(
 }
 
 export async function getWorkflowBySlug(slug: string) {
+  const account = await getAccount();
   const workflow = await db.query.workflows.findFirst({
-    where: eq(workflows.slug, slug),
+    where: and(eq(workflows.slug, slug), eq(workflows.account, account)),
     with: {
       project: true,
       steps: {
@@ -137,28 +142,33 @@ export type WorkflowDetail = NonNullable<
 >;
 
 export async function getWorkflowById(id: string) {
+  const account = await getAccount();
   return db.query.workflows.findFirst({
-    where: eq(workflows.id, id),
+    where: and(eq(workflows.id, id), eq(workflows.account, account)),
     with: { steps: { orderBy: (s, { asc }) => [asc(s.order)] } },
   });
 }
 
 export async function getWorkflowForEdit(slug: string) {
+  const account = await getAccount();
   return db.query.workflows.findFirst({
-    where: eq(workflows.slug, slug),
+    where: and(eq(workflows.slug, slug), eq(workflows.account, account)),
     with: { steps: { orderBy: (s, { asc }) => [asc(s.order)] } },
   });
 }
 
 export async function listWorkflowsForPicker() {
+  const account = await getAccount();
   return db
     .select({ id: workflows.id, title: workflows.title, slug: workflows.slug })
     .from(workflows)
+    .where(eq(workflows.account, account))
     .orderBy(desc(workflows.updatedAt));
 }
 
 /** Prompts available to link into a workflow step. */
 export async function listLinkablePrompts() {
+  const account = await getAccount();
   return db
     .select({
       id: prompts.id,
@@ -167,6 +177,6 @@ export async function listLinkablePrompts() {
       promptText: prompts.promptText,
     })
     .from(prompts)
-    .where(sql`${prompts.status} <> 'archived'`)
+    .where(and(eq(prompts.account, account), sql`${prompts.status} <> 'archived'`))
     .orderBy(desc(prompts.updatedAt));
 }

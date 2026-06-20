@@ -1,16 +1,20 @@
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notes, prompts, tags, workflows } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export async function listTags() {
-  return db.select().from(tags).orderBy(tags.name);
+  const account = await getAccount();
+  return db.select().from(tags).where(eq(tags.account, account)).orderBy(tags.name);
 }
 
 /** Distinct tags actually in use across prompts/workflows/notes, with counts. */
 export async function tagUsage(): Promise<{ tag: string; count: number }[]> {
+  const account = await getAccount();
   const [promptTags, workflowTags, noteTags] = await Promise.all([
-    db.select({ tags: prompts.tags }).from(prompts),
-    db.select({ tags: workflows.tags }).from(workflows),
-    db.select({ tags: notes.tags }).from(notes),
+    db.select({ tags: prompts.tags }).from(prompts).where(eq(prompts.account, account)),
+    db.select({ tags: workflows.tags }).from(workflows).where(eq(workflows.account, account)),
+    db.select({ tags: notes.tags }).from(notes).where(eq(notes.account, account)),
   ]);
 
   const counts = new Map<string, number>();

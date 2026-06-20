@@ -1,11 +1,13 @@
 import { startOfWeek, subWeeks, format } from "date-fns";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notes, projects, promptRuns, prompts, workflows } from "@/db/schema";
 import { RESULT_WEIGHT } from "@/lib/scoring";
+import { getAccount } from "@/lib/account";
 
 /** Top-line counters for the dashboard hero row. */
 export async function dashboardCounters() {
+  const account = await getAccount();
   const [
     [totalPrompts],
     [reliablePrompts],
@@ -15,16 +17,16 @@ export async function dashboardCounters() {
     [tasksDue],
     [totalRuns],
   ] = await Promise.all([
-    db.select({ c: sql<number>`count(*)::int` }).from(prompts).where(sql`status <> 'archived'`),
-    db.select({ c: sql<number>`count(*)::int` }).from(prompts).where(sql`status = 'reliable'`),
-    db.select({ c: sql<number>`count(*)::int` }).from(prompts).where(sql`favorite = true`),
-    db.select({ c: sql<number>`count(*)::int` }).from(workflows).where(sql`status IN ('active','reliable')`),
-    db.select({ c: sql<number>`count(*)::int` }).from(notes).where(sql`status = 'inbox'`),
+    db.select({ c: sql<number>`count(*)::int` }).from(prompts).where(and(eq(prompts.account, account), sql`status <> 'archived'`)),
+    db.select({ c: sql<number>`count(*)::int` }).from(prompts).where(and(eq(prompts.account, account), sql`status = 'reliable'`)),
+    db.select({ c: sql<number>`count(*)::int` }).from(prompts).where(and(eq(prompts.account, account), sql`favorite = true`)),
+    db.select({ c: sql<number>`count(*)::int` }).from(workflows).where(and(eq(workflows.account, account), sql`status IN ('active','reliable')`)),
+    db.select({ c: sql<number>`count(*)::int` }).from(notes).where(and(eq(notes.account, account), sql`status = 'inbox'`)),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(notes)
-      .where(sql`note_type = 'task' AND status NOT IN ('done','archived') AND due_date < now() + interval '3 days'`),
-    db.select({ c: sql<number>`count(*)::int` }).from(promptRuns),
+      .where(and(eq(notes.account, account), sql`note_type = 'task' AND status NOT IN ('done','archived') AND due_date < now() + interval '3 days'`)),
+    db.select({ c: sql<number>`count(*)::int` }).from(promptRuns).where(eq(promptRuns.account, account)),
   ]);
 
   return {
@@ -39,10 +41,11 @@ export async function dashboardCounters() {
 }
 
 export async function promptCategoryDistribution() {
+  const account = await getAccount();
   const rows = await db
     .select({ category: prompts.category, count: sql<number>`count(*)::int` })
     .from(prompts)
-    .where(sql`status <> 'archived'`)
+    .where(and(eq(prompts.account, account), sql`status <> 'archived'`))
     .groupBy(prompts.category)
     .orderBy(sql`count(*) desc`);
   return rows;
@@ -50,11 +53,12 @@ export async function promptCategoryDistribution() {
 
 /** Weekly prompt-quality trend from run results (last `weeks` weeks). */
 export async function promptQualityTrend(weeks = 10) {
+  const account = await getAccount();
   const since = subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), weeks - 1);
   const runs = await db
     .select({ date: promptRuns.date, result: promptRuns.resultStatus })
     .from(promptRuns)
-    .where(sql`${promptRuns.date} >= ${since.toISOString()}`);
+    .where(and(eq(promptRuns.account, account), sql`${promptRuns.date} >= ${since.toISOString()}`));
 
   // Pre-seed buckets so the chart has continuous weeks.
   const buckets = new Map<string, { sum: number; n: number }>();
@@ -80,6 +84,7 @@ export async function promptQualityTrend(weeks = 10) {
 }
 
 export async function topProjectsByPromptUsage(limit = 6) {
+  const account = await getAccount();
   const rows = await db
     .select({
       id: projects.id,
@@ -90,6 +95,7 @@ export async function topProjectsByPromptUsage(limit = 6) {
     })
     .from(projects)
     .leftJoin(prompts, sql`${prompts.relatedProjectId} = ${projects.id}`)
+    .where(eq(projects.account, account))
     .groupBy(projects.id)
     .orderBy(sql`count(${prompts.id}) desc`)
     .limit(limit);
@@ -98,6 +104,7 @@ export async function topProjectsByPromptUsage(limit = 6) {
 
 /** Best tool/model per prompt category (avg result weight) for reports. */
 export async function toolPerformanceByCategory() {
+  const account = await getAccount();
   const rows = await db
     .select({
       category: prompts.category,
@@ -105,7 +112,8 @@ export async function toolPerformanceByCategory() {
       result: promptRuns.resultStatus,
     })
     .from(promptRuns)
-    .innerJoin(prompts, sql`${prompts.id} = ${promptRuns.promptId}`);
+    .innerJoin(prompts, sql`${prompts.id} = ${promptRuns.promptId}`)
+    .where(eq(prompts.account, account));
 
   const map = new Map<string, Map<string, { sum: number; n: number }>>();
   for (const r of rows) {
@@ -131,10 +139,11 @@ export async function toolPerformanceByCategory() {
 
 /** Capture activity over the last `days` days for the weekly-summary report. */
 export async function captureActivity(days = 28) {
+  const account = await getAccount();
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
   const rows = await db
     .select({ createdAt: notes.createdAt, type: notes.noteType })
     .from(notes)
-    .where(sql`${notes.createdAt} >= ${since}`);
+    .where(and(eq(notes.account, account), sql`${notes.createdAt} >= ${since}`));
   return rows;
 }

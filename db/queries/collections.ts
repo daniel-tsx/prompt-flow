@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   collectionItems,
@@ -9,14 +9,21 @@ import {
   workflows,
   type Collection,
 } from "@/db/schema";
+import { getAccount } from "@/lib/account";
 
 export type CollectionListItem = Collection & { itemCount: number };
 
 export async function listCollections(): Promise<CollectionListItem[]> {
-  const rows = await db.select().from(collections).orderBy(collections.name);
+  const account = await getAccount();
+  const rows = await db
+    .select()
+    .from(collections)
+    .where(eq(collections.account, account))
+    .orderBy(collections.name);
   const allItems = await db
     .select({ collectionId: collectionItems.collectionId })
-    .from(collectionItems);
+    .from(collectionItems)
+    .where(eq(collectionItems.account, account));
 
   const countMap = new Map<string, number>();
   for (const it of allItems) {
@@ -37,8 +44,9 @@ export type ResolvedCollectionItem = {
 };
 
 export async function getCollectionById(id: string) {
+  const account = await getAccount();
   const collection = await db.query.collections.findFirst({
-    where: eq(collections.id, id),
+    where: and(eq(collections.id, id), eq(collections.account, account)),
   });
   if (!collection) return null;
 
@@ -101,8 +109,10 @@ export type CollectionDetail = NonNullable<
 >;
 
 export async function listCollectionsForPicker() {
+  const account = await getAccount();
   return db
     .select({ id: collections.id, name: collections.name, color: collections.color })
     .from(collections)
+    .where(eq(collections.account, account))
     .orderBy(collections.name);
 }
