@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoteCard } from "@/components/notes/note-card";
 import { InboxViews } from "@/components/notes/inbox-views";
 import { CaptureButton } from "@/components/notes/capture-button";
-import { listNotes, type NoteFilters } from "@/db/queries/notes";
+import { inboxViewCounts, listNotes, type NoteFilters } from "@/db/queries/notes";
 import { listProjectsForPicker } from "@/db/queries/projects";
 
 export const metadata = { title: "Inbox" };
@@ -27,9 +27,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
   const sp = await searchParams;
   const view = (VALID_VIEWS.includes(sp.view as never) ? sp.view : "all") as NoteFilters["view"];
 
-  const [notes, projects] = await Promise.all([
+  const [notes, projects, viewCounts] = await Promise.all([
     listNotes({ view, search: sp.search }),
     listProjectsForPicker(),
+    inboxViewCounts(),
   ]);
 
   return (
@@ -41,7 +42,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
         actions={<CaptureButton />}
       />
 
-      <InboxViews />
+      <InboxViews counts={viewCounts} />
 
       {notes.length === 0 ? (
         <EmptyState

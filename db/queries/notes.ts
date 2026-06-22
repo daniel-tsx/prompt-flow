@@ -85,6 +85,42 @@ export async function listNotes(filters: NoteFilters = {}): Promise<NoteListItem
   }));
 }
 
+/** Per-view note counts for the inbox tabs (mirrors listNotes view filters). */
+export async function inboxViewCounts(): Promise<Record<NoteFilters["view"] & string, number>> {
+  const account = await getAccount();
+  const rows = await db
+    .select({ noteType: notes.noteType, status: notes.status, pinned: notes.pinned })
+    .from(notes)
+    .where(eq(notes.account, account));
+
+  const ideaTypes = new Set(["idea", "product-idea", "content-idea", "prompt-idea", "workflow-idea"]);
+  const c = {
+    all: 0,
+    tasks: 0,
+    ideas: 0,
+    "prompt-ideas": 0,
+    "workflow-ideas": 0,
+    technical: 0,
+    pinned: 0,
+    done: 0,
+    archived: 0,
+  };
+
+  for (const r of rows) {
+    if (r.status !== "archived") c.all += 1;
+    if (r.noteType === "task") c.tasks += 1;
+    if (ideaTypes.has(r.noteType)) c.ideas += 1;
+    if (r.noteType === "prompt-idea") c["prompt-ideas"] += 1;
+    if (r.noteType === "workflow-idea") c["workflow-ideas"] += 1;
+    if (r.noteType === "technical-note") c.technical += 1;
+    if (r.pinned) c.pinned += 1;
+    if (r.status === "done") c.done += 1;
+    if (r.status === "archived") c.archived += 1;
+  }
+
+  return c;
+}
+
 export async function getNoteById(id: string) {
   const account = await getAccount();
   return db.query.notes.findFirst({
