@@ -136,6 +136,16 @@ export default async function DashboardPage() {
 
   const maxProjectPrompts = Math.max(1, ...topProjects.map((p) => p.promptCount));
 
+  const catTotal = catDist.reduce((s, c) => s + c.count, 0);
+  const topCats = catDist.slice(0, 7).map((c) => ({
+    label: promptCategoryMap[c.category]?.label ?? c.category,
+    value: c.count,
+    accent: promptCategoryMap[c.category]?.accent ?? ("slate" as Accent),
+  }));
+  const restCat = catDist.slice(7).reduce((s, c) => s + c.count, 0);
+  const catComposition =
+    restCat > 0 ? [...topCats, { label: "Other", value: restCat, accent: "slate" as Accent }] : topCats;
+
   return (
     <PageContainer>
       <section
@@ -316,21 +326,17 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Category distribution</CardTitle>
+            <CardTitle className="flex items-center justify-between text-base">
+              Category distribution
+              <span className="text-xs font-normal text-muted-foreground">
+                {catTotal} across {catDist.length} {catDist.length === 1 ? "category" : "categories"}
+              </span>
+            </CardTitle>
             <CardDescription>What you build prompts for.</CardDescription>
           </CardHeader>
           <CardContent>
-            {catDist.length ? (
-              <BarListChart
-                data={catDist
-                  .slice(0, 8)
-                  .map((c) => ({
-                    label: promptCategoryMap[c.category]?.label ?? c.category,
-                    value: c.count,
-                    color: accentHex[promptCategoryMap[c.category]?.accent ?? "slate"],
-                  }))}
-                height={200}
-              />
+            {catComposition.length ? (
+              <CategoryComposition data={catComposition} total={catTotal} />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">No prompts yet.</p>
             )}
@@ -470,6 +476,42 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </PageContainer>
+  );
+}
+
+function CategoryComposition({
+  data,
+  total,
+}: {
+  data: { label: string; value: number; accent: Accent }[];
+  total: number;
+}) {
+  const safeTotal = Math.max(1, total);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
+        {data.map((d) => (
+          <div
+            key={d.label}
+            className="h-full first:rounded-l-full last:rounded-r-full"
+            style={{ width: `${(d.value / safeTotal) * 100}%`, backgroundColor: accentHex[d.accent] }}
+            title={`${d.label}: ${d.value}`}
+          />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-x-5 gap-y-1.5 sm:grid-cols-2">
+        {data.map((d) => (
+          <div key={d.label} className="flex items-center gap-2 text-sm">
+            <span className={cn("size-2 shrink-0 rounded-full", accentDot[d.accent])} />
+            <span className="truncate">{d.label}</span>
+            <span className="ml-auto font-medium tabular-nums">{d.value}</span>
+            <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+              {Math.round((d.value / safeTotal) * 100)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
