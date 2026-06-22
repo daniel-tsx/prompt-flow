@@ -11,24 +11,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { PageContainer, PageHeader } from "@/components/shared/page-header";
 import { ScoreInline } from "@/components/shared/score-badge";
-import { OptionBadge } from "@/components/shared/option-badge";
 import { BarListChart } from "@/components/charts/bar-list-chart";
+import { ToolPerformanceTable } from "@/components/reports/tool-performance-table";
 import { listPrompts } from "@/db/queries/prompts";
 import { listWorkflows } from "@/db/queries/workflows";
 import { inboxMetrics } from "@/db/queries/notes";
 import { captureActivity, toolPerformanceByCategory } from "@/db/queries/stats";
 import { libraryHealthScore, inboxPressure, HEALTH_FLAG_LABEL } from "@/lib/scoring";
-import { promptCategoryMap, targetToolMap } from "@/lib/constants";
 import { avg } from "@/lib/utils";
 
 export const metadata = { title: "Reports" };
@@ -96,26 +87,7 @@ export default async function ReportsPage() {
             {toolPerf.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">Log runs to see tool performance.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Category</TableHead>
-                    <TableHead>Best tool</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
-                    <TableHead className="text-right">Runs</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {toolPerf.slice(0, 10).map((t) => (
-                    <TableRow key={`${t.category}-${t.tool}`}>
-                      <TableCell><OptionBadge option={promptCategoryMap[t.category]} /></TableCell>
-                      <TableCell><OptionBadge option={targetToolMap[t.tool]} /></TableCell>
-                      <TableCell className="text-right"><ScoreInline score={t.score} /></TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{t.runs}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ToolPerformanceTable data={toolPerf.slice(0, 10)} />
             )}
           </CardContent>
         </Card>
