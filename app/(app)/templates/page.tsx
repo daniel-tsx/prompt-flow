@@ -3,6 +3,7 @@ import { FileStack, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { StatStrip } from "@/components/shared/stat-strip";
 import { TemplateCard } from "@/components/templates/template-card";
 import { TemplateFilters } from "@/components/templates/template-filters";
 import { listTemplates } from "@/db/queries/templates";
@@ -14,6 +15,9 @@ type SearchParams = Promise<Record<string, string | undefined>>;
 export default async function TemplatesPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const templates = await listTemplates({ search: sp.search, templateType: sp.type });
+  const withVars = templates.filter((t) => t.variables.length > 0).length;
+  const totalVars = templates.reduce((s, t) => s + t.variables.length, 0);
+  const typeCount = new Set(templates.map((t) => t.templateType)).size;
 
   return (
     <PageContainer>
@@ -37,11 +41,22 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Se
           </Button>
         </EmptyState>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {templates.map((t) => (
-            <TemplateCard key={t.id} template={t} />
-          ))}
-        </div>
+        <>
+          <StatStrip
+            className="mb-4"
+            items={[
+              { label: "Templates", value: templates.length },
+              { label: "With variables", value: withVars },
+              { label: "Total variables", value: totalVars },
+              { label: "Types", value: typeCount },
+            ]}
+          />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {templates.map((t) => (
+              <TemplateCard key={t.id} template={t} />
+            ))}
+          </div>
+        </>
       )}
     </PageContainer>
   );
