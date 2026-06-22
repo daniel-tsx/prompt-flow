@@ -27,6 +27,7 @@ import { Progress } from "@/components/ui/progress";
 import { PageContainer } from "@/components/shared/page-header";
 import { ScoreInline } from "@/components/shared/score-badge";
 import { OptionBadge } from "@/components/shared/option-badge";
+import { CompositionBar } from "@/components/shared/composition-bar";
 import { EmptyState } from "@/components/shared/empty-state";
 import { QualityTrendChart } from "@/components/charts/quality-trend-chart";
 import { BarListChart } from "@/components/charts/bar-list-chart";
@@ -336,7 +337,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {catComposition.length ? (
-              <CategoryComposition data={catComposition} total={catTotal} />
+              <CompositionBar segments={catComposition} total={catTotal} />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">No prompts yet.</p>
             )}
@@ -476,42 +477,6 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </PageContainer>
-  );
-}
-
-function CategoryComposition({
-  data,
-  total,
-}: {
-  data: { label: string; value: number; accent: Accent }[];
-  total: number;
-}) {
-  const safeTotal = Math.max(1, total);
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
-        {data.map((d) => (
-          <div
-            key={d.label}
-            className="h-full first:rounded-l-full last:rounded-r-full"
-            style={{ width: `${(d.value / safeTotal) * 100}%`, backgroundColor: accentHex[d.accent] }}
-            title={`${d.label}: ${d.value}`}
-          />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-x-5 gap-y-1.5 sm:grid-cols-2">
-        {data.map((d) => (
-          <div key={d.label} className="flex items-center gap-2 text-sm">
-            <span className={cn("size-2 shrink-0 rounded-full", accentDot[d.accent])} />
-            <span className="truncate">{d.label}</span>
-            <span className="ml-auto font-medium tabular-nums">{d.value}</span>
-            <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-              {Math.round((d.value / safeTotal) * 100)}%
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
