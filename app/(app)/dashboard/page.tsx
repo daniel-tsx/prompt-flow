@@ -2,22 +2,29 @@ import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Command,
+  Compass,
   FolderKanban,
   Gauge,
   Inbox,
-  LayoutDashboard,
+  Lightbulb,
   ListChecks,
+  Plus,
+  ShieldCheck,
   Sparkles,
   Star,
   TrendingUp,
   Trophy,
   Workflow,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { PageContainer, PageHeader } from "@/components/shared/page-header";
-import { StatCard } from "@/components/shared/stat-card";
+import { PageContainer } from "@/components/shared/page-header";
 import { ScoreInline } from "@/components/shared/score-badge";
 import { OptionBadge } from "@/components/shared/option-badge";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -32,15 +39,25 @@ import {
   topProjectsByPromptUsage,
 } from "@/db/queries/stats";
 import { runsByTool } from "@/db/queries/runs";
-import { inboxPressure, PRESSURE_ACCENT } from "@/lib/scoring";
+import { isOwner } from "@/lib/account";
+import {
+  inboxPressure,
+  libraryHealthScore,
+  PRESSURE_ACCENT,
+  scoreTier,
+  TIER_ACCENT,
+} from "@/lib/scoring";
 import {
   accentBadge,
+  accentDot,
   accentHex,
+  accentText,
   noteTypeMap,
   promptCategoryMap,
   targetToolMap,
+  type Accent,
 } from "@/lib/constants";
-import { relativeTime } from "@/lib/utils";
+import { cn, relativeTime } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
 
@@ -79,7 +96,7 @@ function PromptLine({
 }
 
 export default async function DashboardPage() {
-  const [counters, prompts, trend, catDist, toolRuns, topProjects, notes, metrics] =
+  const [counters, prompts, trend, catDist, toolRuns, topProjects, notes, metrics, owner] =
     await Promise.all([
       dashboardCounters(),
       listPrompts(),
@@ -89,9 +106,21 @@ export default async function DashboardPage() {
       topProjectsByPromptUsage(),
       recentNotes(5),
       inboxMetrics(),
+      isOwner(),
     ]);
 
   const pressure = inboxPressure(metrics);
+  const libraryHealth = libraryHealthScore(prompts.map((p) => ({ flags: p.healthFlags })));
+  const healthAccent = TIER_ACCENT[scoreTier(libraryHealth)];
+  const attentionCount = prompts.filter(
+    (p) => p.status === "needs-improvement" || p.healthFlags.length > 0,
+  ).length;
+
+  const attention = [
+    { icon: AlertTriangle, label: "Prompts to improve", value: attentionCount, href: "/prompts?status=needs-improvement", accent: "amber" as Accent },
+    { icon: ListChecks, label: "Tasks due soon", value: counters.tasksDueSoon, href: "/tasks", accent: "rose" as Accent },
+    { icon: Lightbulb, label: "Ideas to triage", value: metrics.unconvertedIdeaCount, href: "/inbox", accent: "cyan" as Accent },
+  ].filter((a) => a.value > 0);
   const recentlyUsed = [...prompts]
     .filter((p) => p.lastRunAt)
     .sort((a, b) => (b.lastRunAt?.getTime() ?? 0) - (a.lastRunAt?.getTime() ?? 0))
@@ -109,20 +138,118 @@ export default async function DashboardPage() {
 
   return (
     <PageContainer>
-      <PageHeader
-        icon={LayoutDashboard}
-        title="Command Dashboard"
-        description="Your prompt and workflow operating system at a glance."
-      />
+      <section
+        aria-label="Command center"
+        className="overflow-hidden rounded-xl border bg-card/55 shadow-sm"
+      >
+        <div className="grid lg:grid-cols-[1fr_22rem]">
+          {/* Status console */}
+          <div className="flex flex-col gap-5 border-b p-5 sm:p-6 lg:border-r lg:border-b-0">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="relative flex size-1.5">
+                  <span className={cn("absolute inline-flex size-full animate-ping rounded-full opacity-60", accentDot[healthAccent])} />
+                  <span className={cn("relative inline-flex size-1.5 rounded-full", accentDot[healthAccent])} />
+                </span>
+                Command Center
+              </span>
+              <Badge variant="outline" className="font-normal text-muted-foreground">
+                {owner ? "Owner" : "Demo"}
+              </Badge>
+            </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Prompts" value={counters.totalPrompts} icon={Sparkles} accent="violet" href="/prompts" />
-        <StatCard label="Reliable" value={counters.reliablePrompts} icon={Gauge} accent="emerald" href="/prompts?status=reliable" />
-        <StatCard label="Favorites" value={counters.favoritePrompts} icon={Star} accent="amber" href="/prompts?favorite=1" />
-        <StatCard label="Workflows" value={counters.activeWorkflows} icon={Workflow} accent="teal" href="/workflows" />
-        <StatCard label="Inbox" value={counters.inboxCount} icon={Inbox} accent="blue" href="/inbox" />
-        <StatCard label="Runs" value={counters.totalRuns} icon={Activity} accent="cyan" href="/runs" />
-      </div>
+            <div className="space-y-1.5">
+              <h1 className="text-2xl font-semibold tracking-tight text-balance">
+                {attentionCount > 0
+                  ? `${attentionCount} ${attentionCount === 1 ? "prompt needs" : "prompts need"} a look`
+                  : "Your library is running clean"}
+              </h1>
+              <p className="font-mono text-[0.8rem] text-muted-foreground">
+                {counters.totalPrompts} prompts · {counters.reliablePrompts} reliable ·{" "}
+                {counters.activeWorkflows} workflows · {counters.totalRuns} runs logged
+              </p>
+            </div>
+
+            <div className="mt-auto flex flex-wrap items-center gap-2">
+              {owner ? (
+                <Button render={<Link href="/prompts/new" />} size="sm">
+                  <Plus className="size-4" /> New prompt
+                </Button>
+              ) : (
+                <Button render={<Link href="/prompts" />} size="sm">
+                  <Compass className="size-4" /> Explore the library
+                </Button>
+              )}
+              <Button render={<Link href="/reports" />} variant="outline" size="sm">
+                <Gauge className="size-4" /> Reports
+              </Button>
+              <span className="ml-1 hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+                <Command className="size-3.5" />
+                <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[0.65rem] font-medium">⌘K</kbd>
+                to search everything
+              </span>
+            </div>
+          </div>
+
+          {/* Health + attention focal panel */}
+          <div className="flex flex-col gap-4 p-5 sm:p-6">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground">
+                  Library health
+                </span>
+                <ShieldCheck className={cn("size-4", accentText[healthAccent])} />
+              </div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-3xl font-semibold tabular-nums">{libraryHealth}</span>
+                <span className="text-sm text-muted-foreground">/ 100</span>
+                <span className={cn("ml-auto text-xs font-medium capitalize", accentText[healthAccent])}>
+                  {scoreTier(libraryHealth)}
+                </span>
+              </div>
+              <Progress value={libraryHealth} className="mt-2.5" />
+            </div>
+
+            <div className="border-t pt-3.5">
+              <span className="text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground">
+                Needs attention
+              </span>
+              <div className="mt-2 flex flex-col gap-1">
+                {attention.length > 0 ? (
+                  attention.map((a) => (
+                    <Link
+                      key={a.label}
+                      href={a.href}
+                      className="group flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-muted/50"
+                    >
+                      <span className={cn("flex size-6 items-center justify-center rounded-md border", accentBadge[a.accent])}>
+                        <a.icon className="size-3.5" />
+                      </span>
+                      <span className="text-sm">{a.label}</span>
+                      <span className="ml-auto text-sm font-semibold tabular-nums">{a.value}</span>
+                      <ArrowRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    </Link>
+                  ))
+                ) : (
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-500/5 px-2.5 py-2 text-sm text-emerald-300">
+                    <CheckCircle2 className="size-4" /> All clear — nothing to triage.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Instrument cluster */}
+        <div className="grid grid-cols-3 divide-x divide-y divide-border border-t sm:grid-cols-6 sm:divide-y-0">
+          <Instrument label="Prompts" value={counters.totalPrompts} icon={Sparkles} accent="violet" href="/prompts" />
+          <Instrument label="Reliable" value={counters.reliablePrompts} icon={Gauge} accent="emerald" href="/prompts?status=reliable" />
+          <Instrument label="Favorites" value={counters.favoritePrompts} icon={Star} accent="amber" href="/prompts?favorite=1" />
+          <Instrument label="Workflows" value={counters.activeWorkflows} icon={Workflow} accent="teal" href="/workflows" />
+          <Instrument label="Inbox" value={counters.inboxCount} icon={Inbox} accent="blue" href="/inbox" />
+          <Instrument label="Runs" value={counters.totalRuns} icon={Activity} accent="cyan" href="/runs" />
+        </div>
+      </section>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -343,6 +470,35 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </PageContainer>
+  );
+}
+
+function Instrument({
+  label,
+  value,
+  icon: Icon,
+  accent,
+  href,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: LucideIcon;
+  accent: Accent;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col gap-1.5 p-3.5 transition-colors hover:bg-muted/40 sm:p-4"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <Icon className={cn("size-3.5 opacity-70 transition-opacity group-hover:opacity-100", accentText[accent])} />
+      </div>
+      <span className="text-xl font-semibold leading-none tabular-nums">{value}</span>
+    </Link>
   );
 }
 
