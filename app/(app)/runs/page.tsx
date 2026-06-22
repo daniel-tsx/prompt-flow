@@ -5,13 +5,14 @@ import { Card } from "@/components/ui/card";
 import { PageContainer, PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CompositionBar } from "@/components/shared/composition-bar";
+import { StatTile } from "@/components/shared/stat-strip";
 import { RunCard } from "@/components/runs/run-card";
 import { RunFilters } from "@/components/runs/run-filters";
 import { listRuns, type RunFilters as Filters } from "@/db/queries/runs";
 import { listProjectsForPicker } from "@/db/queries/projects";
 import { RESULT_WEIGHT, scoreTier, TIER_ACCENT } from "@/lib/scoring";
 import { RUN_RESULTS, accentText } from "@/lib/constants";
-import { cn, formatMinutes } from "@/lib/utils";
+import { formatMinutes } from "@/lib/utils";
 
 export const metadata = { title: "Prompt Runs" };
 
@@ -53,14 +54,14 @@ export default async function RunsPage({ searchParams }: { searchParams: SearchP
       {runs.length > 0 && (
         <Card className="mb-4 gap-0 overflow-hidden p-0">
           <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
-            <Telem label="Runs" value={runs.length} />
-            <Telem
+            <StatTile label="Runs" value={runs.length} />
+            <StatTile
               label="Success rate"
               value={`${successRate}%`}
               tone={accentText[TIER_ACCENT[scoreTier(successRate)]]}
             />
-            <Telem label="Time saved" value={formatMinutes(totalSaved)} tone="text-emerald-300" />
-            <Telem
+            <StatTile label="Time saved" value={formatMinutes(totalSaved)} tone="text-emerald-300" />
+            <StatTile
               label="Follow-ups"
               value={followUps}
               tone={followUps > 0 ? "text-amber-300" : undefined}
@@ -95,24 +96,5 @@ export default async function RunsPage({ searchParams }: { searchParams: SearchP
         </div>
       )}
     </PageContainer>
-  );
-}
-
-function Telem({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tone?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1 p-4">
-      <span className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span className={cn("text-xl font-semibold leading-none tabular-nums", tone)}>{value}</span>
-    </div>
   );
 }

@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { Plus, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { PageContainer, PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { StatStrip } from "@/components/shared/stat-strip";
 import { WorkflowCard } from "@/components/workflows/workflow-card";
 import { WorkflowFilters } from "@/components/workflows/workflow-filters";
 import { listWorkflows, type WorkflowFilters as Filters } from "@/db/queries/workflows";
 import { listProjectsForPicker } from "@/db/queries/projects";
 import { scoreTier, TIER_ACCENT } from "@/lib/scoring";
 import { accentText } from "@/lib/constants";
-import { avg, cn } from "@/lib/utils";
+import { avg } from "@/lib/utils";
 
 export const metadata = { title: "Workflow Library" };
 
@@ -49,16 +49,15 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
       />
 
       {workflows.length > 0 && (
-        <Card className="mb-4 grid grid-cols-2 gap-0 p-0 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
-          <Stat label="Workflows" value={workflows.length} />
-          <Stat label="Reliable" value={reliableCount} tone={reliableCount > 0 ? "text-emerald-300" : undefined} />
-          <Stat
-            label="Avg maturity"
-            value={avgMaturity}
-            tone={accentText[TIER_ACCENT[scoreTier(avgMaturity)]]}
-          />
-          <Stat label="Total steps" value={totalSteps} />
-        </Card>
+        <StatStrip
+          className="mb-4"
+          items={[
+            { label: "Workflows", value: workflows.length },
+            { label: "Reliable", value: reliableCount, tone: reliableCount > 0 ? "text-emerald-300" : undefined },
+            { label: "Avg maturity", value: avgMaturity, tone: accentText[TIER_ACCENT[scoreTier(avgMaturity)]] },
+            { label: "Total steps", value: totalSteps },
+          ]}
+        />
       )}
 
       <WorkflowFilters projects={projects} />
@@ -77,24 +76,5 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
         </div>
       )}
     </PageContainer>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tone?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1 p-4">
-      <span className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span className={cn("text-xl font-semibold leading-none tabular-nums", tone)}>{value}</span>
-    </div>
   );
 }
