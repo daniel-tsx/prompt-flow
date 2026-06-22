@@ -6,10 +6,12 @@ import { OptionBadge } from "@/components/shared/option-badge";
 import { ScoreInline } from "@/components/shared/score-badge";
 import { WorkflowFavoriteToggle } from "@/components/workflows/workflow-favorite-toggle";
 import { WorkflowActions } from "@/components/workflows/workflow-actions";
-import { workflowStatusMap, workflowTypeMap } from "@/lib/constants";
+import { accentHex, workflowStatusMap, workflowTypeMap } from "@/lib/constants";
+import { scoreTier, TIER_ACCENT } from "@/lib/scoring";
 import type { WorkflowListItem } from "@/db/queries/workflows";
 
 export function WorkflowCard({ workflow }: { workflow: WorkflowListItem }) {
+  const maturityAccent = TIER_ACCENT[scoreTier(workflow.maturity)];
   return (
     <Card className="group gap-0 p-4 transition-colors hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
@@ -50,8 +52,15 @@ export function WorkflowCard({ workflow }: { workflow: WorkflowListItem }) {
             <Sparkles className="size-3.5" /> {workflow.linkedPromptCount} prompts
           </span>
         </div>
-        <span className="flex items-center gap-1">
-          Maturity <ScoreInline score={workflow.maturity} />
+        <span className="flex items-center gap-1.5">
+          Maturity
+          <span className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-muted sm:block">
+            <span
+              className="block h-full rounded-full"
+              style={{ width: `${workflow.maturity}%`, backgroundColor: accentHex[maturityAccent] }}
+            />
+          </span>
+          <ScoreInline score={workflow.maturity} />
         </span>
       </div>
     </Card>
