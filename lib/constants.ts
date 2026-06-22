@@ -92,6 +92,21 @@ export const accentText: Record<Accent, string> = {
   slate: "text-slate-300",
 };
 
+/** Raw hex per accent (Tailwind -400 family) — for charts/SVG that can't use classes. */
+export const accentHex: Record<Accent, string> = {
+  violet: "#a78bfa",
+  teal: "#2dd4bf",
+  blue: "#60a5fa",
+  amber: "#fbbf24",
+  rose: "#fb7185",
+  emerald: "#34d399",
+  cyan: "#22d3ee",
+  indigo: "#818cf8",
+  orange: "#fb923c",
+  pink: "#f472b6",
+  slate: "#94a3b8",
+};
+
 export type Option<T extends string = string> = {
   value: T;
   label: string;

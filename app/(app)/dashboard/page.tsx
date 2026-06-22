@@ -35,6 +35,7 @@ import { runsByTool } from "@/db/queries/runs";
 import { inboxPressure, PRESSURE_ACCENT } from "@/lib/scoring";
 import {
   accentBadge,
+  accentHex,
   noteTypeMap,
   promptCategoryMap,
   targetToolMap,
@@ -176,6 +177,7 @@ export default async function DashboardPage() {
                 data={toolRuns.map((t) => ({
                   label: targetToolMap[t.tool]?.label ?? t.tool,
                   value: t.count,
+                  color: accentHex[targetToolMap[t.tool]?.accent ?? "slate"],
                 }))}
                 height={200}
               />
@@ -195,7 +197,11 @@ export default async function DashboardPage() {
               <BarListChart
                 data={catDist
                   .slice(0, 8)
-                  .map((c) => ({ label: promptCategoryMap[c.category]?.label ?? c.category, value: c.count }))}
+                  .map((c) => ({
+                    label: promptCategoryMap[c.category]?.label ?? c.category,
+                    value: c.count,
+                    color: accentHex[promptCategoryMap[c.category]?.accent ?? "slate"],
+                  }))}
                 height={200}
               />
             ) : (
