@@ -59,7 +59,7 @@ Both accounts live in the same database, partitioned by an `account` column; eve
 
 ## What's inside
 
-- **Dashboard** — counters, prompt-quality trend, runs-by-tool, category distribution, inbox pressure, most-successful / needs-improvement prompts, top projects.
+- **Dashboard** — a command-center hero (library-health gauge, "needs attention" triage, instrument-cluster counters), a composed prompt-quality trend (quality over run volume), runs-by-tool, category composition, inbox pressure, most-successful / needs-improvement prompts, top projects.
 - **Prompts** — card/table library with filters & search; detail with 7 tabs (overview, current, **versions** w/ line-diff, **runs**, notes, workflows, project); markdown editor with section helpers and scores.
 - **Workflows** — builder with reorderable steps + linked prompts; detail step-runner with progress and copy-to-clipboard.
 - **Inbox & Tasks** — global quick capture (⌘⇧N), 9 inbox views, convert notes → prompt/workflow/template, tasks grouped by due date.

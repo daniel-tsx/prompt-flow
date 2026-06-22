@@ -13,7 +13,7 @@ Strategy: **Restrained.** Tinted blue-violet neutrals carry the surface; one vio
 - **Base:** deep blue-violet near-black `oklch(0.17 0.015 280)`; elevated surfaces step up in L. Every neutral is tinted toward 280 hue (never pure `#000`/`#fff`).
 - **Primary:** violet `oklch(0.66 0.19 292)`.
 - **Meaning accents** (`lib/constants.ts`): violet, teal, blue, amber, rose, emerald, cyan, indigo, orange, pink, slate. Used as low-alpha badges (`border/bg/text` at ~10–25%) to encode category, intent, tool, status, score tier. Never decorative.
-- **Charts:** `--chart-1..5` = violet, teal, blue, amber, rose.
+- **Charts:** `--chart-1..5` = violet, teal, blue, amber, rose for sequential/trend series. Distribution charts (runs-by-tool, category composition) instead color each bar/segment by its **meaning accent** via `accentHex` (the `-400` family mirroring `accentDot`), so the data ties back to the rest of the UI.
 
 ## Typography
 
