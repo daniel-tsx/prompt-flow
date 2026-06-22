@@ -1,5 +1,13 @@
 import { isPast, isToday } from "date-fns";
-import { CalendarClock, ListChecks } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CalendarDays,
+  CheckCircle2,
+  CircleDashed,
+  ListChecks,
+  type LucideIcon,
+} from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoteCard } from "@/components/notes/note-card";
@@ -7,6 +15,8 @@ import { CaptureButton } from "@/components/notes/capture-button";
 import { listTasks } from "@/db/queries/notes";
 import { listProjectsForPicker } from "@/db/queries/projects";
 import type { NoteListItem } from "@/db/queries/notes";
+import { accentBadge, accentText, type Accent } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Tasks" };
 
@@ -27,12 +37,17 @@ export default async function TasksPage({ searchParams }: { searchParams: Search
   const upcoming = open.filter((t) => t.dueDate && !isPast(new Date(t.dueDate)) && !isToday(new Date(t.dueDate)));
   const noDue = open.filter((t) => !t.dueDate);
 
-  const sections: { title: string; items: NoteListItem[]; accent: string }[] = [
-    { title: "Overdue", items: overdue, accent: "text-rose-300" },
-    { title: "Today", items: today, accent: "text-amber-300" },
-    { title: "Upcoming", items: upcoming, accent: "text-blue-300" },
-    { title: "No due date", items: noDue, accent: "text-muted-foreground" },
-    { title: "Done", items: done, accent: "text-emerald-300" },
+  const sections: {
+    title: string;
+    items: NoteListItem[];
+    accent: Accent;
+    icon: LucideIcon;
+  }[] = [
+    { title: "Overdue", items: overdue, accent: "rose", icon: AlertTriangle },
+    { title: "Today", items: today, accent: "amber", icon: CalendarClock },
+    { title: "Upcoming", items: upcoming, accent: "blue", icon: CalendarDays },
+    { title: "No due date", items: noDue, accent: "slate", icon: CircleDashed },
+    { title: "Done", items: done, accent: "emerald", icon: CheckCircle2 },
   ];
 
   return (
@@ -54,9 +69,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Search
             .filter((s) => s.items.length > 0)
             .map((section) => (
               <section key={section.title}>
-                <h2 className={`mb-2.5 flex items-center gap-2 text-sm font-semibold ${section.accent}`}>
+                <h2 className={cn("mb-2.5 flex items-center gap-2 text-sm font-semibold", accentText[section.accent])}>
+                  <section.icon className="size-4" />
                   {section.title}
-                  <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground">
+                  <span className={cn("rounded-full border px-1.5 text-xs tabular-nums", accentBadge[section.accent])}>
                     {section.items.length}
                   </span>
                 </h2>
