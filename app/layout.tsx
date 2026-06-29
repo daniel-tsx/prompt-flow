@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   },
   description:
     "A personal AI command library — store, organize, version, and evaluate prompts, workflows, notes, and ideas.",
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#15131d",
 };
 
 export default function RootLayout({

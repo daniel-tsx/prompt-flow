@@ -53,6 +53,8 @@
 
 /* Light theme kept usable, but the app defaults to dark. */
 :root {
+  /* Brand mark accent: teal-500 on light (AA on near-white), teal-400 on dark. */
+  --pf-accent: #14b8a6;
   --background: oklch(0.985 0.002 280);
   --foreground: oklch(0.205 0.02 280);
   --card: oklch(1 0 0);
@@ -92,6 +94,7 @@
 
 /* Dark premium "cockpit": deep blue-violet base, violet primary, teal/blue/amber/rose accents. */
 .dark {
+  --pf-accent: #2dd4bf;
   --background: oklch(0.17 0.015 280);
   --foreground: oklch(0.95 0.008 280);
   --card: oklch(0.215 0.018 280);

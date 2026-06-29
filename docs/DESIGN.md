@@ -34,6 +34,12 @@ Strategy: **Restrained.** Tinted blue-violet neutrals carry the surface; one vio
 
 shadcn/ui on **base-ui** primitives (`nova` style). Composition uses `render`, not `asChild`. Shared building blocks: `PageHeader`/`PageContainer`, `StatCard`, `OptionBadge`, `ScoreBadge`, `Card`, `EmptyState`, command palette, quick capture.
 
+## Brand mark
+
+Constructed "P" with a teal command-prompt caret + cursor dot in its counter. Static +
+subtle animated SVG; one source of truth in `lib/brand/mark.ts`. See
+`docs/architecture/logo-brand-notes.md`.
+
 ## Bans (project-specific)
 
 - No side-stripe (`border-l` accent) cards/callouts.

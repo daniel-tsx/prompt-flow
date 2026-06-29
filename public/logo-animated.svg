@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PromptFlow"><style>@media (prefers-reduced-motion: no-preference) {
+  .pf-caret { stroke-dasharray: 18; stroke-dashoffset: 18; animation: pf-draw 0.55s 0.12s ease-out forwards; }
+  .pf-dot { opacity: 0; transform: scale(0.5); transform-box: fill-box; transform-origin: center; animation: pf-pop 0.22s 0.62s ease-out forwards; }
+  .pf-accent { animation: pf-settle 1.4s 1s ease-in-out 1; }
+}
+@keyframes pf-draw { to { stroke-dashoffset: 0; } }
+@keyframes pf-pop { to { opacity: 1; transform: scale(1); } }
+@keyframes pf-settle { 0%, 100% { opacity: 1; } 50% { opacity: 0.82; } }</style><defs><linearGradient id="pfp-anim" x1="16" y1="11" x2="50" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><g transform="translate(-1.5 0)"><g fill="url(#pfp-anim)"><rect x="16" y="11" width="10" height="42" rx="3"/><path fill-rule="evenodd" d="M22 11 H34 A18 18 0 0 1 34 47 H22 Z M26 20 H34 A9 9 0 0 1 34 38 H26 Z"/></g><g class="pf-accent"><path class="pf-caret" d="M28.5 23.5 L35.5 29 L28.5 34.5" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle class="pf-dot" cx="40" cy="29" r="1.9" fill="#2dd4bf"/></g></g></svg>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Command, Plus, Settings } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandWordmark } from "@/components/brand-logo";
 import {
   Sidebar,
   SidebarContent,
@@ -32,12 +32,8 @@ export function AppSidebar({ account }: { account: "owner" | "demo" }) {
   return (
     <Sidebar>
       <SidebarHeader className="gap-3">
-        <Link href="/dashboard" className="flex items-center gap-2.5 px-2 pt-2">
-          <BrandLogo className="size-8" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold tracking-tight">PromptFlow</span>
-            <span className="text-[0.7rem] text-muted-foreground">Command Library</span>
-          </div>
+        <Link href="/dashboard" className="px-2 pt-2">
+          <BrandWordmark animated />
         </Link>
 
         <div className="flex flex-col gap-1.5 px-1">
